@@ -1,0 +1,40 @@
+{
+  "name": "memcached-typed",
+  "version": "1.0.0",
+  "description": "Typescript Memcached Wrapper, with Promise and Template helper",
+  "main": "./dst/index.js",
+  "typings": "./dst/index.d.ts",
+  "scripts": {
+    "clean": "rm -Rf dst",
+    "prebuild": "npm run clean",
+    "build": "tsc -d",
+    "prepublish": "npm run build",
+    "pretest": "npm run build",
+    "ci:publish": "publish",
+    "test": "mocha dst/**/__test__/**/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/balmbees/memcached-typed.git"
+  },
+  "author": "Kurt Lee",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/balmbees/memcached-typed/issues"
+  },
+  "homepage": "https://github.com/balmbees/memcached-typed#readme",
+  "devDependencies": {
+    "@types/chai": "^4.0.0",
+    "@types/chai-as-promised": "^0.0.31",
+    "@types/mocha": "^2.2.41",
+    "chai": "^4.0.1",
+    "chai-as-promised": "^6.0.0",
+    "mocha": "^3.4.2",
+    "typescript": "^2.4.2",
+    "publish": "^0.6.0"
+  },
+  "dependencies": {
+    "@types/memcached": "^2.2.3",
+    "memcached": "^2.2.2"
+  }
+}

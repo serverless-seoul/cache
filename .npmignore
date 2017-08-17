@@ -1,0 +1,4 @@
+dst/__test__
+src
+.travis.yml
+.npm
