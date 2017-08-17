@@ -1,6 +1,6 @@
-import * as Memcached from "memcached";
+import * as __Memcached from "memcached";
 
-export class TypedMemcached<Result> extends Memcached {
+export class Memcached<Result> extends __Memcached {
   /**
    * Touches the given key.
    * @param key The key
@@ -206,8 +206,8 @@ export class TypedMemcached<Result> extends Memcached {
    * @param cb
    */
   public version() {
-    return new Promise<Memcached.VersionData[]>((resolve, reject) => {
-      super.version(function (err: any, version: Memcached.VersionData[]) {
+    return new Promise<__Memcached.VersionData[]>((resolve, reject) => {
+      super.version(function (err: any, version: __Memcached.VersionData[]) {
         if (err) reject(err);
         else resolve(version);
       });
@@ -219,8 +219,8 @@ export class TypedMemcached<Result> extends Memcached {
    * @param cb
    */
   public settings() {
-    return new Promise<Memcached.StatusData[]>((resolve, reject) => {
-      super.version(function (err: any, version: Memcached.StatusData[]) {
+    return new Promise<__Memcached.StatusData[]>((resolve, reject) => {
+      super.version(function (err: any, version: __Memcached.StatusData[]) {
         if (err) reject(err);
         else resolve(version);
       });
@@ -231,8 +231,8 @@ export class TypedMemcached<Result> extends Memcached {
    * @param cb
    */
   public stats() {
-    return new Promise<Memcached.StatusData[]>((resolve, reject) => {
-      super.version(function (err: any, version: Memcached.StatusData[]) {
+    return new Promise<__Memcached.StatusData[]>((resolve, reject) => {
+      super.version(function (err: any, version: __Memcached.StatusData[]) {
         if (err) reject(err);
         else resolve(version);
       });
@@ -243,8 +243,8 @@ export class TypedMemcached<Result> extends Memcached {
    * @param cb
    */
   public slabs() {
-    return new Promise<Memcached.StatusData[]>((resolve, reject) => {
-      super.version(function (err: any, version: Memcached.StatusData[]) {
+    return new Promise<__Memcached.StatusData[]>((resolve, reject) => {
+      super.version(function (err: any, version: __Memcached.StatusData[]) {
         if (err) reject(err);
         else resolve(version);
       });
@@ -255,8 +255,8 @@ export class TypedMemcached<Result> extends Memcached {
    * @param cb
    */
   public items() {
-    return new Promise<Memcached.StatusData[]>((resolve, reject) => {
-      super.version(function (err: any, version: Memcached.StatusData[]) {
+    return new Promise<__Memcached.StatusData[]>((resolve, reject) => {
+      super.version(function (err: any, version: __Memcached.StatusData[]) {
         if (err) reject(err);
         else resolve(version);
       });
@@ -270,8 +270,8 @@ export class TypedMemcached<Result> extends Memcached {
    * @param cb
    */
   public cachedump(server: string, slabid: number, number: number) {
-    return new Promise<Memcached.CacheDumpData | Memcached.CacheDumpData[]>((resolve, reject) => {
-      super.cachedump(server, slabid, number, function (err: any, cachedump: Memcached.CacheDumpData | Memcached.CacheDumpData[]) {
+    return new Promise<__Memcached.CacheDumpData | __Memcached.CacheDumpData[]>((resolve, reject) => {
+      super.cachedump(server, slabid, number, function (err: any, cachedump: __Memcached.CacheDumpData | __Memcached.CacheDumpData[]) {
         if (err) reject(err);
         else resolve(cachedump);
       });
