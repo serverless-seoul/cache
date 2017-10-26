@@ -1,6 +1,6 @@
 {
   "name": "memcached-typed",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Typescript Memcached Wrapper, with Promise and Template helper",
   "main": "./dst/index.js",
   "typings": "./dst/index.d.ts",
