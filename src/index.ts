@@ -52,12 +52,12 @@ export class Memcached<Result> extends __Memcached {
    * @param keys all the keys that needs to be fetched
    * @param cb
    */
-  public getMulti(keys: string[]) {
+  public getMulti(keys: string[]): Promise<{ [key: string]: Result }> {
     if (keys.length === 0) {
       return Promise.resolve({});
     }
 
-    const aa = new Promise<{ [key: string]: Result }>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       super.getMulti(keys, function(err: any, data) {
         if (err) reject(err);
         else resolve(data);
