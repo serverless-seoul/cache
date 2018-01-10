@@ -1,6 +1,6 @@
 import * as __Memcached from "memcached";
 
-export class Memcached<Result> extends __Memcached {
+export class Memcached extends __Memcached {
   /**
    * Touches the given key.
    * @param key The key
@@ -21,7 +21,7 @@ export class Memcached<Result> extends __Memcached {
    * @param key The key
    * @param cb
    */
-  public get(key: string) {
+  public get<Result>(key: string) {
     return new Promise<Result>((resolve, reject) => {
       super.get(key, function(err: any, data: any) {
         if (err) reject(err);
@@ -35,7 +35,7 @@ export class Memcached<Result> extends __Memcached {
    * @param key The key
    * @param cb
    */
-  public gets(key: string) {
+  public gets<Result>(key: string) {
     return new Promise<{ value: Result | undefined, cas: string }>((resolve, reject) => {
       super.gets(key, function(err: any, data) {
         if (err) reject(err);
@@ -52,12 +52,12 @@ export class Memcached<Result> extends __Memcached {
    * @param keys all the keys that needs to be fetched
    * @param cb
    */
-  public getMulti(keys: string[]): Promise<{ [key: string]: Result }> {
+  public getMulti<Result>(keys: string[]) {
     if (keys.length === 0) {
       return Promise.resolve({});
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise<{ [key: string]: Result }>((resolve, reject) => {
       super.getMulti(keys, function(err: any, data) {
         if (err) reject(err);
         else resolve(data);
@@ -73,7 +73,7 @@ export class Memcached<Result> extends __Memcached {
    * @param lifetime
    * @param cb
    */
-  public set(key: string, value: Result, lifetime: number) {
+  public set<Result>(key: string, value: Result, lifetime: number) {
     return new Promise<boolean>((resolve, reject) => {
       super.set(key, value, lifetime, function (err: any, result: boolean) {
         if (err) reject(err);
@@ -89,7 +89,7 @@ export class Memcached<Result> extends __Memcached {
    * @param lifetime
    * @param cb
    */
-  public replace(key: string, value: Result, lifetime: number) {
+  public replace<Result>(key: string, value: Result, lifetime: number) {
     return new Promise<boolean>((resolve, reject) => {
       super.replace(key, value, lifetime, function (err: any, result: boolean) {
         if (err) reject(err);
@@ -105,7 +105,7 @@ export class Memcached<Result> extends __Memcached {
    * @param lifetime
    * @param cb
    */
-  public add(key: string, value: Result, lifetime: number) {
+  public add<Result>(key: string, value: Result, lifetime: number) {
     return new Promise<boolean>((resolve, reject) => {
       super.add(key, value, lifetime, function (err: any, result: boolean) {
         if (err) reject(err);
@@ -122,7 +122,7 @@ export class Memcached<Result> extends __Memcached {
    * @param lifetime
    * @param cb
    */
-  public cas(key: string, value: Result, cas: string, lifetime: number) {
+  public cas<Result>(key: string, value: Result, cas: string, lifetime: number) {
     return new Promise<boolean>((resolve, reject) => {
       super.cas(key, value, cas, lifetime, function (err: any, result: boolean) {
         if (err) reject(err);
@@ -137,7 +137,7 @@ export class Memcached<Result> extends __Memcached {
    * @param value Either a buffer, JSON, number or string that you want to store.
    * @param cb
    */
-  public append(key: string, value: Result) {
+  public append<Result>(key: string, value: Result) {
     return new Promise<boolean>((resolve, reject) => {
       super.append(key, value, function (err: any, result: boolean) {
         if (err) reject(err);
@@ -152,7 +152,7 @@ export class Memcached<Result> extends __Memcached {
    * @param value Either a buffer, JSON, number or string that you want to store.
    * @param cb
    */
-  public prepend(key: string, value: Result) {
+  public prepend<Result>(key: string, value: Result) {
     return new Promise<boolean>((resolve, reject) => {
       super.prepend(key, value, function (err: any, result: boolean) {
         if (err) reject(err);
@@ -300,5 +300,57 @@ export class Memcached<Result> extends __Memcached {
    */
   public end() {
     super.end();
+  }
+}
+
+export class MemcachedFetcher {
+  constructor(private memcached: Memcached) {}
+
+  public async fetch<Result>(key: string, lifetime: number, fetcher: () => Promise<Result>): Promise<Result> {
+    let value = await this.memcached.get<Result>(key);
+    if (!value) {
+      value = await fetcher();
+      await this.memcached.set(key, value, lifetime);
+    }
+    return value;
+  }
+
+  public async multiFetch<Argument, Result>(
+    args: Argument[],
+    argToKey: (args: Argument) => string,
+    lifetime: number,
+    fetcher: (args: Argument[]) => Promise<Result[]>,
+  ): Promise<Result[]> {
+    // Memcached has multiGet bug
+    if (args.length === 0) {
+      return [];
+    }
+
+    const argsToKeyMap = new Map<Argument, string>(
+      args.map((arg) => [arg, argToKey(arg)] as [Argument, string]));
+
+    const cached = await (this.memcached.getMulti(Array.from(argsToKeyMap.values())) as Promise<{ [key: string]: Result }>);
+    const missingArgs = args.filter((arg) => cached[argsToKeyMap.get(arg)!] === undefined);
+
+    const fetchedArray = await fetcher(missingArgs);
+
+    if (fetchedArray.length !== missingArgs.length) {
+      throw new Error("Fetcher must return same length of result with Args.length");
+    }
+    const fetched = new Map<Argument, Result>(
+      missingArgs.map((arg, index) => [arg, fetchedArray[index]] as [Argument, Result]));
+
+    await Promise.all(Array.from(fetched).map(async ([arg, result]) => {
+      await this.memcached.set(argsToKeyMap.get(arg)!, result, lifetime);
+    }));
+
+    return args.map((arg) => {
+      const key = argsToKeyMap.get(arg)!;
+      if (cached[key]) {
+        return cached[key];
+      } else {
+        return fetched.get(arg)!;
+      }
+    });
   }
 }

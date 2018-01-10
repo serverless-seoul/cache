@@ -1,6 +1,6 @@
 {
   "name": "memcached-typed",
-  "version": "1.0.4",
+  "version": "2.0.1",
   "description": "Typescript Memcached Wrapper, with Promise and Template helper",
   "main": "./dst/index.js",
   "typings": "./dst/index.d.ts",
@@ -11,7 +11,7 @@
     "prepublish": "npm run build",
     "pretest": "npm run build",
     "ci:publish": "publish",
-    "test": "mocha dst/**/__test__/**/*.js"
+    "test": "MEMCACHED_URL=127.0.0.1 mocha dst/**/__test__/**/*.js"
   },
   "repository": {
     "type": "git",
