@@ -1,13 +1,13 @@
 {
   "name": "memcached-typed",
-  "version": "2.0.1",
+  "version": "3.0.0-beta.1",
   "description": "Typescript Memcached Wrapper, with Promise and Template helper",
   "main": "./dst/index.js",
   "typings": "./dst/index.d.ts",
   "scripts": {
     "clean": "rm -Rf dst",
     "prebuild": "npm run clean",
-    "build": "tsc -d",
+    "build": "tsc -d -p tsconfig.test.json",
     "prepublish": "npm run build",
     "pretest": "npm run build",
     "ci:publish": "publish",
@@ -34,7 +34,7 @@
     "publish": "^0.6.0"
   },
   "dependencies": {
-    "@types/memcached": "^2.2.3",
+    "@types/memcached": "^2.2.5",
     "memcached": "^2.2.2"
   }
 }
