@@ -1,19 +1,68 @@
 import * as __Memcached from "memcached";
 
-export class Memcached extends __Memcached {
+export class Memcached {
+  private __client: Promise<__Memcached>;
+
+  constructor(private serverURL: string, private options: { autoDiscovery: boolean, debug?: boolean }) {
+    this.__client = (async () => {
+      const sharedOptions = { debug: options.debug || false } as any;
+      if (options.autoDiscovery) {
+        const configClient = new __Memcached(serverURL, sharedOptions);
+        try {
+          const serverURLs = await new Promise<string[]>((resolve, reject) => {
+            (configClient as any).command(() => {
+              return {
+                command: 'config get cluster',
+                callback: (err: Error, response: string) => {
+                  if (err) {
+                    reject(err);
+                  } else {
+                    const lines = response.split(/\r?\n/);
+                    const unparsedNodes = lines[1].split(' ');
+                    resolve(unparsedNodes.map((node) => {
+                      const parts = node.split('|');
+                      const hostName = parts[0];
+                      const port = parts[2];
+
+                      return `${hostName}:${port}`;
+                    }));
+                  }
+                },
+              };
+            });
+          });
+          configClient.end();
+          return new __Memcached(serverURLs, sharedOptions);
+        } catch (e) {
+          configClient.end();
+          return new __Memcached(serverURL, sharedOptions);
+        }
+      } else {
+        return new __Memcached(serverURL, sharedOptions);
+      }
+    })();
+    if (options.debug) {
+      this.__client.then((c) => {
+        console.log("DEBUG : ", c);
+      });
+    }
+  }
+
   /**
    * Touches the given key.
    * @param key The key
    * @param lifetime After how long should the key expire measured in seconds
    * @param cb
    */
-  public touch(key: string, lifetime: number) {
-    return new Promise<void>((resolve, reject) => {
-      super.touch(key, lifetime, function(err: any) {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
+  public async touch(key: string, lifetime: number) {
+    return await this.__client.then((client) =>
+      new Promise<void>((resolve, reject) => {
+        client.touch(key, lifetime, function (err: any) {
+          if (err) reject(err);
+          else resolve();
+        });
+      })
+    );
   }
 
   /**
@@ -21,30 +70,15 @@ export class Memcached extends __Memcached {
    * @param key The key
    * @param cb
    */
-  public get<Result>(key: string) {
-    return new Promise<Result>((resolve, reject) => {
-      super.get(key, function(err: any, data: any) {
-        if (err) reject(err);
-        else resolve(data);
-      });
-    });
-  }
-
-  /**
-   * Get the value and the CAS id.
-   * @param key The key
-   * @param cb
-   */
-  public gets<Result>(key: string) {
-    return new Promise<{ value: Result | undefined, cas: string }>((resolve, reject) => {
-      super.gets(key, function(err: any, data) {
-        if (err) reject(err);
-        else resolve({
-          value: data[key],
-          cas: data.cas,
+  public async get<Result>(key: string) {
+    return await this.__client.then((client) =>
+      new Promise<Result>((resolve, reject) => {
+        client.get(key, function(err: any, data: any) {
+          if (err) reject(err);
+          else resolve(data);
         });
-      });
-    });
+      })
+    );
   }
 
   /**
@@ -52,17 +86,18 @@ export class Memcached extends __Memcached {
    * @param keys all the keys that needs to be fetched
    * @param cb
    */
-  public getMulti<Result>(keys: string[]) {
+  public async getMulti<Result>(keys: string[]) {
     if (keys.length === 0) {
       return Promise.resolve({});
     }
-
-    return new Promise<{ [key: string]: Result }>((resolve, reject) => {
-      super.getMulti(keys, function(err: any, data) {
-        if (err) reject(err);
-        else resolve(data);
-      });
-    });
+    return await this.__client.then((client) =>
+      new Promise<{ [key: string]: Result }>((resolve, reject) => {
+        client.getMulti(keys, function (err: any, data) {
+          if (err) reject(err);
+          else resolve(data);
+        });
+      })
+    );
   }
 
   /**
@@ -73,13 +108,15 @@ export class Memcached extends __Memcached {
    * @param lifetime
    * @param cb
    */
-  public set<Result>(key: string, value: Result, lifetime: number) {
-    return new Promise<boolean>((resolve, reject) => {
-      super.set(key, value, lifetime, function (err: any, result: boolean) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
+  public async set<Result>(key: string, value: Result, lifetime: number) {
+    return await this.__client.then((client) =>
+      new Promise<boolean>((resolve, reject) => {
+        client.set(key, value, lifetime, function (err: any, result: boolean) {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      })
+    );
   }
 
   /**
@@ -89,106 +126,15 @@ export class Memcached extends __Memcached {
    * @param lifetime
    * @param cb
    */
-  public replace<Result>(key: string, value: Result, lifetime: number) {
-    return new Promise<boolean>((resolve, reject) => {
-      super.replace(key, value, lifetime, function (err: any, result: boolean) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  }
-
-  /**
-   * Add the value, only if it's not in memcached already.
-   * @param key The key
-   * @param value Either a buffer, JSON, number or string that you want to store.
-   * @param lifetime
-   * @param cb
-   */
-  public add<Result>(key: string, value: Result, lifetime: number) {
-    return new Promise<boolean>((resolve, reject) => {
-      super.add(key, value, lifetime, function (err: any, result: boolean) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  }
-
-  /**
-   * Add the value, only if it matches the given CAS value.
-   * @param key The key
-   * @param value Either a buffer, JSON, number or string that you want to store.
-   * @param cas
-   * @param lifetime
-   * @param cb
-   */
-  public cas<Result>(key: string, value: Result, cas: string, lifetime: number) {
-    return new Promise<boolean>((resolve, reject) => {
-      super.cas(key, value, cas, lifetime, function (err: any, result: boolean) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  }
-
-  /**
-   * Add the given value string to the value of an existing item.
-   * @param key The key
-   * @param value Either a buffer, JSON, number or string that you want to store.
-   * @param cb
-   */
-  public append<Result>(key: string, value: Result) {
-    return new Promise<boolean>((resolve, reject) => {
-      super.append(key, value, function (err: any, result: boolean) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  }
-
-  /**
-   * Add the given value string to the value of an existing item.
-   * @param key The key
-   * @param value Either a buffer, JSON, number or string that you want to store.
-   * @param cb
-   */
-  public prepend<Result>(key: string, value: Result) {
-    return new Promise<boolean>((resolve, reject) => {
-      super.prepend(key, value, function (err: any, result: boolean) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  }
-
-  /**
-   * Increment a given key.
-   * @param key The key
-   * @param amount The increment
-   * @param cb
-   */
-  public incr(key: string, amount: number) {
-    return new Promise<boolean | number>((resolve, reject) => {
-      super.incr(key, amount, function (err: any, result: boolean | number) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  }
-
-  /**
-   * Decrement a given key.
-   * @param key The key
-   * @param amount The decrement
-   * @param cb
-   */
-  public decr(key: string, amount: number) {
-    return new Promise<boolean | number>((resolve, reject) => {
-      super.decr(key, amount, function (err: any, result: boolean | number) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
+  public async replace<Result>(key: string, value: Result, lifetime: number) {
+    return await this.__client.then((client) =>
+      new Promise<boolean>((resolve, reject) => {
+        client.replace(key, value, lifetime, function (err: any, result: boolean) {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      })
+    );
   }
 
   /**
@@ -196,110 +142,37 @@ export class Memcached extends __Memcached {
    * @param key The key
    * @param cb
    */
-  public del(key: string) {
-    return new Promise<boolean>((resolve, reject) => {
-      super.del(key, function (err: any, result: boolean) {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  }
-
-  /**
-   * Retrieves the version number of your server.
-   * @param cb
-   */
-  public version() {
-    return new Promise<__Memcached.VersionData[]>((resolve, reject) => {
-      super.version(function (err: any, version: __Memcached.VersionData[]) {
-        if (err) reject(err);
-        else resolve(version);
-      });
-    });
-  }
-
-  /**
-   * Retrieves your stats settings.
-   * @param cb
-   */
-  public settings() {
-    return new Promise<__Memcached.StatusData[]>((resolve, reject) => {
-      super.version(function (err: any, version: __Memcached.StatusData[]) {
-        if (err) reject(err);
-        else resolve(version);
-      });
-    });
-  }
-  /**
-   * Retrieves stats from your memcached server.
-   * @param cb
-   */
-  public stats() {
-    return new Promise<__Memcached.StatusData[]>((resolve, reject) => {
-      super.version(function (err: any, version: __Memcached.StatusData[]) {
-        if (err) reject(err);
-        else resolve(version);
-      });
-    });
-  }
-  /**
-   * Retrieves stats slabs information.
-   * @param cb
-   */
-  public slabs() {
-    return new Promise<__Memcached.StatusData[]>((resolve, reject) => {
-      super.version(function (err: any, version: __Memcached.StatusData[]) {
-        if (err) reject(err);
-        else resolve(version);
-      });
-    });
-  }
-  /**
-   * Retrieves stats items information.
-   * @param cb
-   */
-  public items() {
-    return new Promise<__Memcached.StatusData[]>((resolve, reject) => {
-      super.version(function (err: any, version: __Memcached.StatusData[]) {
-        if (err) reject(err);
-        else resolve(version);
-      });
-    });
-  }
-  /**
-   * Inspect cache, see examples for a detailed explanation.
-   * @param server
-   * @param slabid
-   * @param number
-   * @param cb
-   */
-  public cachedump(server: string, slabid: number, number: number) {
-    return new Promise<__Memcached.CacheDumpData | __Memcached.CacheDumpData[]>((resolve, reject) => {
-      super.cachedump(server, slabid, number, function (err: any, cachedump: __Memcached.CacheDumpData | __Memcached.CacheDumpData[]) {
-        if (err) reject(err);
-        else resolve(cachedump);
-      });
-    });
+  public async del(key: string) {
+    return await this.__client.then((client) =>
+      new Promise<boolean>((resolve, reject) => {
+        client.del(key, function (err: any, result: boolean) {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      })
+    );
   }
 
   /**
    * Flushes the memcached server.
    * @param cb
    */
-  public flush(cb?: (this: undefined, err: any, results: boolean[]) => void) {
-    return new Promise<boolean[]>((resolve, reject) => {
-      super.flush(function (err: any, results: boolean[]) {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
+  public async flush(cb?: (this: undefined, err: any, results: boolean[]) => void) {
+    return await this.__client.then((client) =>
+      new Promise<boolean[]>((resolve, reject) => {
+        client.flush(function (err: any, results: boolean[]) {
+          if (err) reject(err);
+          else resolve(results);
+        });
+      })
+    );
   }
 
   /**
    * Closes all active memcached connections.
    */
-  public end() {
-    super.end();
+  public async end() {
+    return await this.__client.then((client) => client.end());
   }
 }
 

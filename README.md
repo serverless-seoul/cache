@@ -45,3 +45,7 @@ describe("#fetchMulti", () => {
   });
 });
 ```
+
+# AWS Elasticache autoDiscovery
+
+this only supports > 1.4.14

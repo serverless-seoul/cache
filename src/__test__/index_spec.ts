@@ -9,7 +9,7 @@ import { MemcachedFetcher, Memcached } from "../index";
 
 describe(MemcachedFetcher.name, () => {
   describe("#multiFetch", () => {
-    const memcached = new Memcached(process.env.MEMCACHED_URL as string);
+    const memcached = new Memcached(process.env.MEMCACHED_URL as string, { autoDiscovery: false });
     const fetcher = new MemcachedFetcher(memcached);
 
     it("should fetch only missing sets", async () => {
