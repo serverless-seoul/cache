@@ -31,14 +31,21 @@ export class Memcached {
               };
             });
           });
+          configClient.end();
           return new __Memcached(serverURLs, sharedOptions);
         } catch (e) {
+          configClient.end();
           return new __Memcached(serverURL, sharedOptions);
         }
       } else {
         return new __Memcached(serverURL, sharedOptions);
       }
     })();
+    if (options.debug) {
+      this.__client.then((c) => {
+        console.log("DEBUG : ", c);
+      });
+    }
   }
 
   /**
