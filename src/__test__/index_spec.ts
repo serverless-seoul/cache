@@ -34,14 +34,17 @@ describe(MemcachedFetcher.name, () => {
       );
       expect(res2).to.deep.eq([1, 4, 200, 400, 25]);
 
+      let fetcherCalled = false;
       const res3 = await fetcher.multiFetch(
         [],
         (arg) => `v1-${arg}`,
         3600,
         async (args) => {
+          fetcherCalled = true;
           return args.map((arg) => arg);
         }
       );
+      expect(fetcherCalled).to.be.eq(false);
       expect(res3).to.deep.eq([]);
     });
   });

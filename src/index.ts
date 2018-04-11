@@ -205,7 +205,7 @@ export class MemcachedFetcher {
     const cached = await (this.memcached.getMulti(Array.from(argsToKeyMap.values())) as Promise<{ [key: string]: Result }>);
     const missingArgs = args.filter((arg) => cached[argsToKeyMap.get(arg)!] === undefined);
 
-    const fetchedArray = await fetcher(missingArgs);
+    const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
 
     if (fetchedArray.length !== missingArgs.length) {
       throw new Error("Fetcher must return same length of result with Args.length");
