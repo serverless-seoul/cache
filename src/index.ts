@@ -1,11 +1,21 @@
 import * as __Memcached from "memcached";
 
+export type MemcachedOptions = __Memcached.options & {
+  autoDiscovery: boolean;
+  debug?: boolean;
+};
+
 export class Memcached {
   private __client: Promise<__Memcached>;
 
-  constructor(private serverURL: string, private options: { autoDiscovery: boolean, debug?: boolean }) {
+  constructor(private serverURL: string, private options: MemcachedOptions) {
     this.__client = (async () => {
-      const sharedOptions = { debug: options.debug || false } as any;
+      const sharedOptions = {
+        ...options,
+        debug: options.debug || false,
+        autoDiscovery: undefined, // omit
+      } as __Memcached.options;
+
       if (options.autoDiscovery) {
         const configClient = new __Memcached(serverURL, sharedOptions);
         try {
