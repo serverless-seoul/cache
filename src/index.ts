@@ -1,11 +1,36 @@
 import * as __Memcached from "memcached";
 
+export type MemcachedOptions = __Memcached.options & {
+  autoDiscovery: boolean;
+  debug?: boolean;
+};
+
 export class Memcached {
   private __client: Promise<__Memcached>;
 
-  constructor(private serverURL: string, private options: { autoDiscovery: boolean, debug?: boolean }) {
+  constructor(private serverURL: string, private options: MemcachedOptions) {
+    const DEFAULT_OPTIONS = {
+      // the time after which Memcached sends a connection timeout
+      timeout: 1000,
+
+      // the time between reconnection attempts
+      reconnect: 100, // if dead, attempt reconnect each 100 ms
+
+      // the time between a server failure and an attempt to set it up back in service.
+      retry: 100, // When a server has an error, wait this amount of time before retrying
+
+      // Time after which `failures` will be reset to original value, since last failure
+      failuresTimeout: 15000,
+    };
+
     this.__client = (async () => {
-      const sharedOptions = { debug: options.debug || false } as any;
+      const sharedOptions = {
+        ...(DEFAULT_OPTIONS as any), // DEFAULT_OPTIONS has untyped entry, so just cast to any
+        ...options,
+        debug: options.debug || false,
+        autoDiscovery: undefined, // omit
+      } as __Memcached.options;
+
       if (options.autoDiscovery) {
         const configClient = new __Memcached(serverURL, sharedOptions);
         try {
