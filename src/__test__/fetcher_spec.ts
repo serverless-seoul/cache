@@ -54,7 +54,7 @@ describe(MemcachedFetcher.name, () => {
 
   context("with redis driver", () => {
     describe("#multiFetch", () => {
-      const redis = new RedisDriver(process.env.REDIS_URL as string, { db: 3 });
+      const redis = new RedisDriver(process.env.REDIS_URL as string);
       const fetcher = new MemcachedFetcher(redis);
 
       it("should fetch only missing sets", async () => {

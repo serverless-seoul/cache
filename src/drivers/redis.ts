@@ -81,16 +81,17 @@ export class RedisDriver extends Driver {
     return keys.reduce((hash, key, index) => {
       const val = response[index];
 
-      if (val !== undefined) {
+      if (val !== null) {
         try {
           hash[key] = JSON.parse(val);
         } catch (e) {
           hash[key] = val;
         }
-      } else {
-        hash[key] = undefined;
+
+        return hash;
       }
 
+      hash[key] = undefined;
       return hash;
     }, {} as { [key: string]: Result | undefined });
   }
