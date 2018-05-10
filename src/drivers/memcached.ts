@@ -1,17 +1,18 @@
 import * as BbPromise from "bluebird";
-import * as __Memcached from "memcached";
+import * as Memcached from "memcached";
 
 import { Driver } from "./base"
 
-export type MemcachedOptions = __Memcached.options & {
+export type MemcachedDriverOptions = {
   autoDiscovery: boolean;
   debug?: boolean;
+  memcached?: Memcached.options;
 };
 
 export class MemcachedDriver extends Driver {
-  private __client: Promise<__Memcached>;
+  public client: Promise<Memcached>;
 
-  constructor(private serverURL: string, private options: MemcachedOptions) {
+  constructor(private serverURL: string, private options: MemcachedDriverOptions) {
     super();
 
     const DEFAULT_OPTIONS = {
@@ -31,16 +32,15 @@ export class MemcachedDriver extends Driver {
       failuresTimeout: 15000,
     };
 
-    this.__client = (async () => {
+    this.client = (async () => {
       const sharedOptions = {
         ...(DEFAULT_OPTIONS as any), // DEFAULT_OPTIONS has untyped entry, so just cast to any
-        ...options,
+        ...(options.memcached || {}),
         debug: options.debug || false,
-        autoDiscovery: undefined, // omit
-      } as __Memcached.options;
+      } as Memcached.options;
 
       if (options.autoDiscovery) {
-        const configClient = new __Memcached(serverURL, sharedOptions);
+        const configClient = new Memcached(serverURL, sharedOptions);
         try {
           const serverURLs = await new Promise<string[]>((resolve, reject) => {
             (configClient as any).command(() => {
@@ -65,24 +65,24 @@ export class MemcachedDriver extends Driver {
             });
           });
           configClient.end();
-          return new __Memcached(serverURLs, sharedOptions);
+          return new Memcached(serverURLs, sharedOptions);
         } catch (e) {
           configClient.end();
-          return new __Memcached(serverURL, sharedOptions);
+          return new Memcached(serverURL, sharedOptions);
         }
       } else {
-        return new __Memcached(serverURL, sharedOptions);
+        return new Memcached(serverURL, sharedOptions);
       }
     })();
     if (options.debug) {
-      this.__client.then((c) => {
+      this.client.then((c) => {
         console.log("DEBUG : ", c);
       });
     }
   }
 
   public async touch(key: string, lifetime: number) {
-    const client = await this.__client;
+    const client = await this.client;
 
     return await BbPromise.fromCallback<boolean>((cb) =>
       client.touch(key, lifetime, cb),
@@ -90,7 +90,7 @@ export class MemcachedDriver extends Driver {
   }
 
   public async get<Result>(key: string) {
-    const client = await this.__client;
+    const client = await this.client;
 
     return await BbPromise.fromCallback<Result | undefined>((cb) =>
       client.get(key, cb),
@@ -102,7 +102,7 @@ export class MemcachedDriver extends Driver {
       return {};
     }
 
-    const client = await this.__client;
+    const client = await this.client;
 
     return await BbPromise.fromCallback<{ [key: string]: Result | undefined }>((cb) =>
       client.getMulti(keys, cb),
@@ -110,7 +110,7 @@ export class MemcachedDriver extends Driver {
   }
 
   public async set<Result>(key: string, value: Result, lifetime: number = 0) {
-    const client = await this.__client;
+    const client = await this.client;
 
     return await BbPromise.fromCallback<boolean>((cb) =>
       client.set(key, value, lifetime, cb),
@@ -118,7 +118,7 @@ export class MemcachedDriver extends Driver {
   }
 
   public async replace<Result>(key: string, value: Result, lifetime: number = 0) {
-    const client = await this.__client;
+    const client = await this.client;
 
     return await BbPromise.fromCallback<boolean>((cb) =>
       client.replace(key, value, lifetime, cb),
@@ -126,7 +126,7 @@ export class MemcachedDriver extends Driver {
   }
 
   public async del(key: string) {
-    const client = await this.__client;
+    const client = await this.client;
 
     return await BbPromise.fromCallback<boolean>((cb) =>
       client.del(key, cb),
@@ -134,7 +134,7 @@ export class MemcachedDriver extends Driver {
   }
 
   public async flush() {
-    const client = await this.__client;
+    const client = await this.client;
 
     const responses = await BbPromise.fromCallback<boolean[]>((cb) =>
       client.flush(cb),
@@ -144,7 +144,7 @@ export class MemcachedDriver extends Driver {
   }
 
   public async end() {
-    const client = await this.__client;
+    const client = await this.client;
 
     return client.end();
   }

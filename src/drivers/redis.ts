@@ -1,24 +1,49 @@
-import * as BbPromise from "bluebird";
-import * as redis from "redis";
+import * as IORedis from "ioredis";
 
 import { Driver } from "./base"
 
-export class RedisDriver extends Driver {
-  private client: redis.RedisClient;
+export interface StandaloneModeOptions {
+  enableClusterMode?: false;
+  ioredis?: IORedis.RedisOptions;
+}
 
-  constructor(private serverURL: string, private options: redis.ClientOpts) {
+export interface ClusterModeOptions {
+  enableClusterMode: true;
+  ioredis?: IORedis.ClusterOptions;
+}
+
+export type RedisDriverOptions = StandaloneModeOptions | ClusterModeOptions;
+
+export class RedisDriver extends Driver {
+  public client: IORedis.Redis;
+
+  constructor(private serverUrl: string, private options: RedisDriverOptions = {}) {
     super();
 
-    const DEFAULT_OPTIONS: redis.ClientOpts = {
-      retry_strategy() {
-        return 100; // retry after 100ms
-      },
-    };
+    if (options.enableClusterMode) {
+      const DEFAULT_OPTIONS: IORedis.ClusterOptions = {
+        clusterRetryStrategy(times) {
+          return 100; // retry after 100ms
+        },
+      };
 
-    this.client = redis.createClient(serverURL, {
-      ...DEFAULT_OPTIONS,
-      ...options,
-    });
+      // if server url is master, node discovery is automatically performed
+      this.client = new IORedis.Cluster([serverUrl], {
+        ...DEFAULT_OPTIONS,
+        ...(options.ioredis || {}),
+      });
+    } else {
+      const DEFAULT_OPTIONS: IORedis.RedisOptions = {
+        retryStrategy(times) {
+          return 100; // retry after 100ms
+        },
+      };
+
+      this.client = new IORedis(serverUrl, {
+        ...DEFAULT_OPTIONS,
+        ...(options.ioredis || {}),
+      });
+    }
   }
 
   public async touch(key: string, lifetime: number) {
@@ -27,17 +52,13 @@ export class RedisDriver extends Driver {
     //
     // 1 if the timeout was set.
     // 0 if key does not exist.
-    const reply = await BbPromise.fromCallback<number>((cb) =>
-      this.client.expire(key, lifetime, cb),
-    );
+    const reply = await this.client.expire(key, lifetime);
 
     return reply === 1;
   }
 
   public async get<Result>(key: string) {
-    const response = await BbPromise.fromCallback((cb) =>
-      this.client.get(key, cb),
-    );
+    const response = await this.client.get(key);
 
     if (!response) {
       return undefined;
@@ -46,7 +67,7 @@ export class RedisDriver extends Driver {
     try {
       return JSON.parse(response) as Result;
     } catch (e) {
-      return response as Result;
+      return response as any;
     }
   }
 
@@ -55,9 +76,7 @@ export class RedisDriver extends Driver {
       return {};
     }
 
-    const response = await BbPromise.fromCallback((cb) =>
-      this.client.mget(keys, cb),
-    );
+    const response = await this.client.mget(...keys);
 
     return keys.reduce((hash, key, index) => {
       const val = response[index];
@@ -82,16 +101,12 @@ export class RedisDriver extends Driver {
     // @see https://redis.io/commands/setex#return-value
     // @type Simple string Reply
     if (!lifetime) {
-      const reply = await BbPromise.fromCallback((cb) =>
-        this.client.set(key, serialized, cb),
-      );
+      const reply = await this.client.set(key, serialized);
 
       return reply === "OK";
     }
 
-    const reply = await BbPromise.fromCallback((cb) =>
-      this.client.setex(key, lifetime, serialized, cb),
-    );
+    const reply = await this.client.setex(key, lifetime, serialized);
 
     return reply === "OK";
   }
@@ -99,16 +114,9 @@ export class RedisDriver extends Driver {
   public async replace<Result>(key: string, value: Result, lifetime?: number) {
     const serialized = JSON.stringify(value);
 
-    if (!lifetime) {
-      const reply = await BbPromise.fromCallback((cb) =>
-        this.client.set(key, serialized, "XX", cb), // XX -- Only set the key if it already exist.
-      );
-
-      return reply === "OK";
-    }
-
-    const reply = await BbPromise.fromCallback((cb) =>
-      this.client.set(key, serialized, "EX", lifetime, "XX", cb),
+    const reply = await (lifetime ?
+      this.client.set(key, serialized, "EX", lifetime, "XX") :
+      this.client.set(key, serialized, "XX") // XX -- Only set the key if it already exist.
     );
 
     return reply === "OK";
@@ -117,9 +125,7 @@ export class RedisDriver extends Driver {
   public async del(key: string) {
     // @see https://redis.io/commands/del#return-value
     // @type Integer reply: The number of keys that were removed.
-    const reply = await BbPromise.fromCallback((cb) =>
-      this.client.del(key, cb),
-    );
+    const reply = await this.client.del(key);
 
     return reply > 0;
   }
@@ -132,18 +138,15 @@ export class RedisDriver extends Driver {
     // since redis blocks everything during flush process,
     // flushing database which has huge number of keys can be cause redis server outage.
     // so it is great improvement, but currently AWS ElastiCache does not support redis 4.
-    const reply = await BbPromise.fromCallback((cb) =>
-      // @note this command does not flush entire redis database,
-      // so this command **ONLY** flushes current active database
-      this.client.flushdb(cb),
-    );
+
+    // @note this command does not flush entire redis database,
+    // so this command **ONLY** flushes current active database
+    const reply = await this.client.flushdb();
 
     return reply === "OK";
   }
 
   public async end() {
-    await BbPromise.fromCallback((cb) =>
-      this.client.quit(cb), // quit method should disconnect connection cleanly
-    );
+    await this.client.quit(); // quit method should disconnect connection cleanly
   }
 }
