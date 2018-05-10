@@ -1,3 +1,4 @@
+import * as BbPromise from "bluebird";
 import * as IORedis from "ioredis";
 
 import { Driver } from "./base"
@@ -21,11 +22,14 @@ export type RedisDriverOptions = RedisDriverBaseOptions | RedisDriverStandaloneM
 
 export class RedisDriver extends Driver {
   public client: IORedis.Redis;
+  public isCluster: boolean;
 
   constructor(private serverUrl: string, private options: RedisDriverOptions = {}) {
     super();
 
-    if (options.enableClusterMode) {
+    this.isCluster = !!options.enableClusterMode;
+
+    if (this.isCluster) {
       const DEFAULT_OPTIONS: IORedis.ClusterOptions = {
         clusterRetryStrategy(times) {
           return 100; // retry after 100ms
@@ -81,24 +85,37 @@ export class RedisDriver extends Driver {
       return {};
     }
 
-    const response = await this.client.mget(...keys);
-
-    return keys.reduce((hash, key, index) => {
-      const val = response[index];
-
-      if (val !== null) {
-        try {
-          hash[key] = JSON.parse(val);
-        } catch (e) {
-          hash[key] = val;
-        }
+    // In cluster mode, MGET (multiple get) command requires all keys must be same key slot
+    // if client does not handle this, redis will give "CROSSSLOT Keys in request don't hash to the same slot" Error
+    if (this.isCluster) {
+      // this is temporary fix for CROSSSLOT issue.
+      // we should consider using cluster-key-slot module to optimize requests.
+      // @todo optimize getMulti logic in Cluster Mode
+      return await BbPromise.reduce(keys, async (hash, key) => {
+        hash[key] = await this.get(key);
 
         return hash;
-      }
+      }, {} as { [key: string]: Result | undefined });
+    } else {
+      const response = await this.client.mget(...keys);
 
-      hash[key] = undefined;
-      return hash;
-    }, {} as { [key: string]: Result | undefined });
+      return keys.reduce((hash, key, index) => {
+        const val = response[index];
+
+        if (val !== null) {
+          try {
+            hash[key] = JSON.parse(val);
+          } catch (e) {
+            hash[key] = val;
+          }
+
+          return hash;
+        }
+
+        hash[key] = undefined;
+        return hash;
+      }, {} as { [key: string]: Result | undefined });
+    }
   }
 
   public async set<Result>(key: string, value: Result, lifetime?: number) {
