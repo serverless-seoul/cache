@@ -2,17 +2,22 @@ import * as IORedis from "ioredis";
 
 import { Driver } from "./base"
 
-export interface StandaloneModeOptions {
-  enableClusterMode?: false;
+export interface RedisDriverBaseOptions {
+  enableClusterMode?: boolean;
+  ioredis?: IORedis.RedisOptions | IORedis.ClusterOptions;
+}
+
+export interface RedisDriverStandaloneModeOptions {
+  enableClusterMode: false;
   ioredis?: IORedis.RedisOptions;
 }
 
-export interface ClusterModeOptions {
+export interface RedisDriverClusterModeOptions {
   enableClusterMode: true;
   ioredis?: IORedis.ClusterOptions;
 }
 
-export type RedisDriverOptions = StandaloneModeOptions | ClusterModeOptions;
+export type RedisDriverOptions = RedisDriverBaseOptions | RedisDriverStandaloneModeOptions | RedisDriverClusterModeOptions;
 
 export class RedisDriver extends Driver {
   public client: IORedis.Redis;
@@ -30,7 +35,7 @@ export class RedisDriver extends Driver {
       // if server url is master, node discovery is automatically performed
       this.client = new IORedis.Cluster([serverUrl], {
         ...DEFAULT_OPTIONS,
-        ...(options.ioredis || {}),
+        ...(options.ioredis as IORedis.ClusterOptions || {}),
       });
     } else {
       const DEFAULT_OPTIONS: IORedis.RedisOptions = {
@@ -41,7 +46,7 @@ export class RedisDriver extends Driver {
 
       this.client = new IORedis(serverUrl, {
         ...DEFAULT_OPTIONS,
-        ...(options.ioredis || {}),
+        ...(options.ioredis as IORedis.RedisOptions || {}),
       });
     }
   }
