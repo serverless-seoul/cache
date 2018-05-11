@@ -6,7 +6,7 @@ npm install memcached-typed --save
 2. Support <T> for get / set methods
 3. Advanced cache-access pattern such as fetch.
 
-```
+```typescript
 describe("#fetchMulti", () => {
   const memcached = new Memcached();
   const fetcher = new MemcachedFetcher(memcached);
