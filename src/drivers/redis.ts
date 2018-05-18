@@ -20,13 +20,11 @@ export interface RedisDriverClusterModeOptions {
 
 export type RedisDriverOptions = RedisDriverBaseOptions | RedisDriverStandaloneModeOptions | RedisDriverClusterModeOptions;
 
-export class RedisDriver extends Driver {
+export class RedisDriver implements Driver {
   public client: IORedis.Redis;
   public isCluster: boolean;
 
   constructor(private serverUrl: string, private options: RedisDriverOptions = {}) {
-    super();
-
     this.isCluster = !!options.enableClusterMode;
 
     if (this.isCluster) {
@@ -123,26 +121,16 @@ export class RedisDriver extends Driver {
 
     // @see https://redis.io/commands/setex#return-value
     // @type Simple string Reply
+    let reply: string;
     if (!lifetime) {
-      const reply = await this.client.set(key, serialized);
-
-      return reply === "OK";
+      reply = await this.client.set(key, serialized);
+    } else {
+      reply = await this.client.setex(key, lifetime, serialized);
     }
 
-    const reply = await this.client.setex(key, lifetime, serialized);
-
-    return reply === "OK";
-  }
-
-  public async replace<Result>(key: string, value: Result, lifetime?: number) {
-    const serialized = JSON.stringify(value);
-
-    const reply = await (lifetime ?
-      this.client.set(key, serialized, "EX", lifetime, "XX") :
-      this.client.set(key, serialized, "XX") // XX -- Only set the key if it already exist.
-    );
-
-    return reply === "OK";
+    if (reply !== "OK") {
+      throw new Error(`RedisDriver failed to set: '${key} - ${value}'`);
+    }
   }
 
   public async del(key: string) {
@@ -166,7 +154,9 @@ export class RedisDriver extends Driver {
     // so this command **ONLY** flushes current active database
     const reply = await this.client.flushdb();
 
-    return reply === "OK";
+    if (reply !== "OK") {
+      throw new Error(`RedisDriver failed to flush: '${reply}'`);
+    }
   }
 
   public async end() {
