@@ -21,7 +21,7 @@ describe(MemcachedFetcher.name, () => {
       it("should fetch only missing sets", async () => {
         const res1 = await fetcher.multiFetch(
           [1, 2, 3, 4, 5],
-          "v1", (arg) => arg,
+          "v1",
           3600,
           async (args) => {
             return args.map((arg) => arg * arg);
@@ -32,7 +32,7 @@ describe(MemcachedFetcher.name, () => {
         // it's using same hash key, so should reuse cache for exsiting values
         const res2 = await fetcher.multiFetch(
           [1, 2, 100, 200, 5],
-          "v1", (arg) => arg,
+          ["v1", (arg) => arg],
           3600,
           async (args) => {
             return args.map((arg) => arg + arg);
@@ -43,7 +43,7 @@ describe(MemcachedFetcher.name, () => {
         let fetcherCalled = false;
         const res3 = await fetcher.multiFetch(
           [],
-          "v1", (arg) => arg,
+          ["v1", (arg) => arg],
           3600,
           async (args) => {
             fetcherCalled = true;
@@ -64,7 +64,7 @@ describe(MemcachedFetcher.name, () => {
       it("should fetch only missing sets", async () => {
         const res1 = await fetcher.multiFetch(
           [1, 2, 3, 4, 5],
-          "v1", (arg) => arg,
+          ["v1", (arg) => arg],
           3600,
           async (args) => {
             return args.map((arg) => arg * arg);
@@ -75,7 +75,7 @@ describe(MemcachedFetcher.name, () => {
         // it's using same hash key, so should reuse cache for exsiting values
         const res2 = await fetcher.multiFetch(
           [1, 2, 100, 200, 5],
-          "v1", (arg) => arg,
+          ["v1", (arg) => arg],
           3600,
           async (args) => {
             return args.map((arg) => arg + arg);
@@ -86,7 +86,7 @@ describe(MemcachedFetcher.name, () => {
         let fetcherCalled = false;
         const res3 = await fetcher.multiFetch(
           [],
-          "v1", (arg) => arg,
+          ["v1", (arg) => arg],
           3600,
           async (args) => {
             fetcherCalled = true;

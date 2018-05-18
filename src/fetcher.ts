@@ -1,7 +1,22 @@
 import { Driver } from "./drivers/base";
+import * as crypto from "crypto";
 
 export class MemcachedFetcher {
-  constructor(private driver: Driver) {}
+  private readonly keyHasher: (key: string) => string;
+
+  constructor(private driver: Driver, options: { keyHashing?: boolean } = {}) {
+    const keyHashing = options.keyHashing !== undefined ? options.keyHashing : true;
+    if (keyHashing) {
+      this.keyHasher = (key: string) => {
+        return crypto
+          .createHash("md5")
+          .update(key)
+          .digest("hex");
+      };
+    } else {
+      this.keyHasher = (key: string) => key;
+    }
+  }
 
   public async fetch<Result>(key: string, lifetime: number, fetcher: () => Promise<Result>): Promise<Result> {
     let value = await this.driver.get<Result>(key);
@@ -16,18 +31,28 @@ export class MemcachedFetcher {
 
   public async multiFetch<Argument, Result>(
     args: Argument[],
-    namespace: string,
-    argToKey: (args: Argument) => { toString(): string },
+    key: string | [string, (args: Argument) => { toString(): string }],
     lifetime: number,
-    fetcher: (args: Argument[]) => Promise<Result[]>,
+    fetcher: (args: Argument[]) => Promise<Result[]>
   ): Promise<Result[]> {
-    // Memcached has multiGet bug
     if (args.length === 0) {
       return [];
     }
 
+    const { namespace, argToKey } = (() => {
+      if (typeof (key) === "string") {
+        return { namespace: key, argToKey: (arg: Argument) => arg.toString() };
+      } else {
+        return { namespace: key[0], argToKey: key[1] };
+      }
+    })();
+
     const argsToKeyMap = new Map<Argument, string>(
-      args.map((arg) => [arg, `${namespace}:${argToKey(arg).toString()}`] as [Argument, string]));
+      args.map((arg) => {
+        const key = `${namespace}:${argToKey(arg).toString()}`;
+        return [arg, this.keyHasher(key)] as [Argument, string];
+      })
+    );
 
     const cached = await (this.driver.getMulti(Array.from(argsToKeyMap.values())) as Promise<{ [key: string]: Result }>);
     const missingArgs = args.filter((arg) => cached[argsToKeyMap.get(arg)!] === undefined);
