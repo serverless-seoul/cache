@@ -14,10 +14,14 @@ describe(MemcachedFetcher.name, () => {
       const memcached = new MemcachedDriver(process.env.MEMCACHED_URL as string, { autoDiscovery: false });
       const fetcher = new MemcachedFetcher(memcached);
 
+      beforeEach(async () => {
+        await memcached.flush();
+      });
+
       it("should fetch only missing sets", async () => {
         const res1 = await fetcher.multiFetch(
           [1, 2, 3, 4, 5],
-          (arg) => `v1-${arg}`,
+          "v1", (arg) => arg,
           3600,
           async (args) => {
             return args.map((arg) => arg * arg);
@@ -28,7 +32,7 @@ describe(MemcachedFetcher.name, () => {
         // it's using same hash key, so should reuse cache for exsiting values
         const res2 = await fetcher.multiFetch(
           [1, 2, 100, 200, 5],
-          (arg) => `v1-${arg}`,
+          "v1", (arg) => arg,
           3600,
           async (args) => {
             return args.map((arg) => arg + arg);
@@ -39,7 +43,7 @@ describe(MemcachedFetcher.name, () => {
         let fetcherCalled = false;
         const res3 = await fetcher.multiFetch(
           [],
-          (arg) => `v1-${arg}`,
+          "v1", (arg) => arg,
           3600,
           async (args) => {
             fetcherCalled = true;
@@ -60,7 +64,7 @@ describe(MemcachedFetcher.name, () => {
       it("should fetch only missing sets", async () => {
         const res1 = await fetcher.multiFetch(
           [1, 2, 3, 4, 5],
-          (arg) => `v1-${arg}`,
+          "v1", (arg) => arg,
           3600,
           async (args) => {
             return args.map((arg) => arg * arg);
@@ -71,7 +75,7 @@ describe(MemcachedFetcher.name, () => {
         // it's using same hash key, so should reuse cache for exsiting values
         const res2 = await fetcher.multiFetch(
           [1, 2, 100, 200, 5],
-          (arg) => `v1-${arg}`,
+          "v1", (arg) => arg,
           3600,
           async (args) => {
             return args.map((arg) => arg + arg);
@@ -82,7 +86,7 @@ describe(MemcachedFetcher.name, () => {
         let fetcherCalled = false;
         const res3 = await fetcher.multiFetch(
           [],
-          (arg) => `v1-${arg}`,
+          "v1", (arg) => arg,
           3600,
           async (args) => {
             fetcherCalled = true;

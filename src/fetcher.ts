@@ -16,7 +16,8 @@ export class MemcachedFetcher {
 
   public async multiFetch<Argument, Result>(
     args: Argument[],
-    argToKey: (args: Argument) => string,
+    namespace: string,
+    argToKey: (args: Argument) => { toString(): string },
     lifetime: number,
     fetcher: (args: Argument[]) => Promise<Result[]>,
   ): Promise<Result[]> {
@@ -26,7 +27,7 @@ export class MemcachedFetcher {
     }
 
     const argsToKeyMap = new Map<Argument, string>(
-      args.map((arg) => [arg, argToKey(arg)] as [Argument, string]));
+      args.map((arg) => [arg, `${namespace}:${argToKey(arg).toString()}`] as [Argument, string]));
 
     const cached = await (this.driver.getMulti(Array.from(argsToKeyMap.values())) as Promise<{ [key: string]: Result }>);
     const missingArgs = args.filter((arg) => cached[argsToKeyMap.get(arg)!] === undefined);

@@ -1,6 +1,6 @@
 {
   "name": "memcached-typed",
-  "version": "4.0.0",
+  "version": "4.1.0-beta.0",
   "description": "Typescript Memcached Wrapper, with Promise and Template helper",
   "main": "./dst/index.js",
   "typings": "./dst/index.d.ts",
@@ -35,11 +35,8 @@
     "typescript": "^2.4.2"
   },
   "dependencies": {
-    "@types/bluebird": "^3.5.20",
     "@types/ioredis": "^3.2.7",
-    "@types/memcached": "^2.2.5",
-    "bluebird": "^3.5.1",
     "ioredis": "^3.2.2",
-    "memcached": "^2.2.2"
+    "memcache-plus": "^0.2.18"
   }
 }
