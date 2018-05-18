@@ -19,11 +19,13 @@ export class MemcachedFetcher {
   }
 
   public async fetch<Result>(key: string, lifetime: number, fetcher: () => Promise<Result>): Promise<Result> {
-    let value = await this.driver.get<Result>(key);
+    const hasheKey = this.keyHasher(key);
+
+    let value = await this.driver.get<Result>(hasheKey);
 
     if (!value) {
       value = await fetcher();
-      await this.driver.set(key, value, lifetime);
+      await this.driver.set(hasheKey, value, lifetime);
     }
 
     return value;
