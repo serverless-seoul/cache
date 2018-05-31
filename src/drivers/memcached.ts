@@ -38,6 +38,10 @@ export class MemcachedDriver implements Driver {
     await this.client.set(key, value, lifetime);
   }
 
+  public async del(key: string) {
+    return await this.client.delete(key);
+  }
+
   public async flush<Result>() {
     await this.client.flush();
   }

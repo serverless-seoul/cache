@@ -23,6 +23,8 @@ export interface Driver {
    */
   set<Result>(key: string, value: Result, lifetime?: number): Promise<void>;
 
+  del(key: string): Promise<boolean>;
+
   /**
    * Flushes the memcached server.
    * @return Promise<void>
