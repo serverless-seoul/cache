@@ -31,6 +31,11 @@ export class MemcachedFetcher {
     return value;
   }
 
+  public async del(key: string) {
+    const hasheKey = this.keyHasher(key);
+    return await this.driver.del(hasheKey);
+  }
+
   public async multiFetch<Argument, Result>(
     args: Argument[],
     key: string | [string, (args: Argument) => { toString(): string }],
