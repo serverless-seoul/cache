@@ -10,14 +10,14 @@ import { MemcachedFetcher } from "../fetcher";
 
 describe(MemcachedFetcher.name, () => {
   context("with memcached driver", () => {
+    const memcached = new MemcachedDriver(process.env.MEMCACHED_URL as string, { autoDiscovery: false });
+    const fetcher = new MemcachedFetcher(memcached);
+
+    beforeEach(async () => {
+      await memcached.flush();
+    });
+
     describe("#multiFetch", () => {
-      const memcached = new MemcachedDriver(process.env.MEMCACHED_URL as string, { autoDiscovery: false });
-      const fetcher = new MemcachedFetcher(memcached);
-
-      beforeEach(async () => {
-        await memcached.flush();
-      });
-
       it("should fetch only missing sets", async () => {
         const res1 = await fetcher.multiFetch(
           [1, 2, 3, 4, 5],
@@ -52,6 +52,30 @@ describe(MemcachedFetcher.name, () => {
         );
         expect(fetcherCalled).to.be.eq(false);
         expect(res3).to.deep.eq([]);
+      });
+    });
+
+    describe("#multiFetchDelete", () => {
+      it("should fetch only missing sets", async () => {
+        expect(await fetcher.multiFetch(
+          [1, 2, 3, 4, 5],
+          "v1",
+          3600,
+          async (args) => {
+            return args.map((arg) => arg * arg);
+          }
+        )).to.deep.eq([1, 4, 9, 16, 25]);
+
+        await fetcher.multiFetchDelete([1, 2, 3], "v1");
+
+        expect(await fetcher.multiFetch(
+          [1, 2, 3, 4, 5],
+          "v1",
+          3600,
+          async (args) => {
+            return args.map((arg) => 0);
+          }
+        )).to.deep.eq([0, 0, 0, 16, 25]);
       });
     });
   });

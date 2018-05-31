@@ -56,8 +56,8 @@ export class MemcachedFetcher {
 
     const argsToKeyMap = new Map<Argument, string>(
       args.map((arg) => {
-        const key = `${namespace}:${argToKey(arg).toString()}`;
-        return [arg, this.keyHasher(key)] as [Argument, string];
+        const key = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
+        return [arg, key] as [Argument, string];
       })
     );
 
@@ -84,5 +84,25 @@ export class MemcachedFetcher {
         return fetched.get(arg)!;
       }
     });
+  }
+
+  public async multiFetchDelete<Argument, Result>(
+    args: Argument[],
+    key: string | [string, (args: Argument) => { toString(): string }]
+  ) {
+    const { namespace, argToKey } = (() => {
+      if (typeof (key) === "string") {
+        return { namespace: key, argToKey: (arg: Argument) => arg.toString() };
+      } else {
+        return { namespace: key[0], argToKey: key[1] };
+      }
+    })();
+
+    await Promise.all(
+      args.map(async (arg) => {
+        const key = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
+        await this.driver.del(key);
+      })
+    );
   }
 }
