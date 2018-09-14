@@ -67,10 +67,6 @@ export class RedisDriver implements Driver {
   public async get<Result>(key: string) {
     const response = await this.client.get(key);
 
-    if (!response) {
-      return undefined;
-    }
-
     try {
       return JSON.parse(response) as Result;
     } catch (e) {
