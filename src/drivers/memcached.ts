@@ -16,12 +16,7 @@ export class MemcachedDriver implements Driver {
   }
 
   public async get<Result>(key: string): Promise<Result | undefined> {
-    const res = await this.client.get(key);
-    if (res === null) {
-      return undefined;
-    } else {
-      return res;
-    }
+    return await this.client.get(key);
   }
 
   public async getMulti<Result>(keys: string[]): Promise<{ [key: string]: Result | undefined }> {
