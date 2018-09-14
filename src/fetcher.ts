@@ -23,7 +23,7 @@ export class MemcachedFetcher {
 
     let value = await this.driver.get<Result>(hasheKey);
 
-    if (!value) {
+    if (value === undefined) {
       value = await fetcher();
       await this.driver.set(hasheKey, value, lifetime);
     }
@@ -48,7 +48,7 @@ export class MemcachedFetcher {
 
     const { namespace, argToKey } = (() => {
       if (typeof (key) === "string") {
-        return { namespace: key, argToKey: (arg: Argument) => arg.toString() };
+        return { namespace: key, argToKey: (arg: Argument) => String(arg) };
       } else {
         return { namespace: key[0], argToKey: key[1] };
       }
@@ -61,8 +61,15 @@ export class MemcachedFetcher {
       })
     );
 
+    console.log("ARGSTOKEYMAP: ", argsToKeyMap);
+
     const cached = await (this.driver.getMulti(Array.from(argsToKeyMap.values())) as Promise<{ [key: string]: Result }>);
-    const missingArgs = args.filter((arg) => cached[argsToKeyMap.get(arg)!] === undefined);
+    console.log("CACHE OBJECT: ", cached);
+    const missingArgs = args.filter((arg) => {
+      console.log("VALUE: ", cached[argsToKeyMap.get(arg)!]);
+      return cached[argsToKeyMap.get(arg)!] === undefined
+    });
+    console.log("MISSING: ", missingArgs);
 
     const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
 
@@ -78,9 +85,11 @@ export class MemcachedFetcher {
 
     return args.map((arg) => {
       const key = argsToKeyMap.get(arg)!;
-      if (cached[key]) {
+      if (cached[key] !== undefined) {
+        console.log("CACHED: ", cached[key]);
         return cached[key];
       } else {
+        console.log("FETCHED: ", fetched.get(arg)!);
         return fetched.get(arg)!;
       }
     });

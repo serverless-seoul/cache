@@ -53,6 +53,24 @@ describe(MemcachedFetcher.name, () => {
         expect(fetcherCalled).to.be.eq(false);
         expect(res3).to.deep.eq([]);
       });
+
+      it.only("should fetch null value only missing sets", async () => {
+        const res1 = await fetcher.multiFetch(
+          [1, 2, null],
+          "v1",
+          3600,
+          async (args) => args
+        );
+        expect(res1).to.deep.eq([1, 2, null]);
+
+        const res2 = await fetcher.multiFetch(
+          [1, 2, null, null],
+          "v1",
+          3600,
+          async (args) => args.map(__ => 100)
+        );
+        expect(res2).to.deep.eq([1, 2, null, null]);
+      });
     });
 
     describe("#multiFetchDelete", () => {
