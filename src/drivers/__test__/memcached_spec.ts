@@ -9,11 +9,7 @@ describe(MemcachedDriver.name, () => {
 
       expect(await memcached.del("Key")).to.be.eq(false);
 
-      await memcached.set("Key1", null);
-      console.log("RESULT::", await memcached.get("Key1"));
-      console.log("RESULT::", await memcached.get("Key"));
-      console.log("RESULT1::", await memcached.getMulti(["Key1"]));
-      console.log("RESULT1::", await memcached.getMulti(["Key"]));
+      await memcached.set("Key", null);
       expect(await memcached.del("Key")).to.be.eq(true);
     });
   });

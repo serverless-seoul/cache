@@ -61,15 +61,8 @@ export class MemcachedFetcher {
       })
     );
 
-    console.log("ARGSTOKEYMAP: ", argsToKeyMap);
-
     const cached = await (this.driver.getMulti(Array.from(argsToKeyMap.values())) as Promise<{ [key: string]: Result }>);
-    console.log("CACHE OBJECT: ", cached);
-    const missingArgs = args.filter((arg) => {
-      console.log("VALUE: ", cached[argsToKeyMap.get(arg)!]);
-      return cached[argsToKeyMap.get(arg)!] === undefined
-    });
-    console.log("MISSING: ", missingArgs);
+    const missingArgs = args.filter((arg) => cached[argsToKeyMap.get(arg)!] === undefined);
 
     const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
 
@@ -86,10 +79,8 @@ export class MemcachedFetcher {
     return args.map((arg) => {
       const key = argsToKeyMap.get(arg)!;
       if (cached[key] !== undefined) {
-        console.log("CACHED: ", cached[key]);
         return cached[key];
       } else {
-        console.log("FETCHED: ", fetched.get(arg)!);
         return fetched.get(arg)!;
       }
     });

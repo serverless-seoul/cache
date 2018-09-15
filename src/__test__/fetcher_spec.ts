@@ -54,7 +54,7 @@ describe(MemcachedFetcher.name, () => {
         expect(res3).to.deep.eq([]);
       });
 
-      it.only("should fetch null value only missing sets", async () => {
+      it("should fetch null value only missing sets", async () => {
         const res1 = await fetcher.multiFetch(
           [1, 2, null],
           "v1",
