@@ -1,9 +1,4 @@
-import * as chai from "chai";
-import * as chaiAsPromised from "chai-as-promised";
-chai.use(chaiAsPromised);
-chai.should();
-
-const { expect } = chai;
+import { expect } from "chai";
 
 import { MemcachedDriver, RedisDriver } from "../drivers";
 import { MemcachedFetcher } from "../fetcher";
@@ -54,22 +49,22 @@ describe(MemcachedFetcher.name, () => {
         expect(res3).to.deep.eq([]);
       });
 
-      it("should fetch null value only missing sets", async () => {
+      it("should work with value <0>", async () => {
         const res1 = await fetcher.multiFetch(
-          [1, 2, null],
+          [1, 2, 0],
           "v1",
           3600,
           async (args) => args
         );
-        expect(res1).to.deep.eq([1, 2, null]);
+        expect(res1).to.deep.eq([1, 2, 0]);
 
         const res2 = await fetcher.multiFetch(
-          [1, 2, null, null],
+          [1, 2, 0, 0],
           "v1",
           3600,
           async (args) => args.map(__ => 100)
         );
-        expect(res2).to.deep.eq([1, 2, null, null]);
+        expect(res2).to.deep.eq([1, 2, 0, 0]);
       });
     });
 

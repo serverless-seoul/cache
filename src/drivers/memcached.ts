@@ -1,5 +1,3 @@
-import * as BbPromise from "bluebird";
-
 const MemcachedPlus = require("memcache-plus");
 
 import { Driver } from "./base"
@@ -16,7 +14,12 @@ export class MemcachedDriver implements Driver {
   }
 
   public async get<Result>(key: string): Promise<Result | undefined> {
-    return await this.client.get(key);
+    const res = await this.client.get(key);
+    if (res === null) {
+      return undefined;
+    } else {
+      return res;
+    }
   }
 
   public async getMulti<Result>(keys: string[]): Promise<{ [key: string]: Result | undefined }> {
