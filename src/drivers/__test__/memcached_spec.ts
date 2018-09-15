@@ -9,7 +9,7 @@ describe(MemcachedDriver.name, () => {
 
       expect(await memcached.del("Key")).to.be.eq(false);
 
-      await memcached.set("Key", 100)
+      await memcached.set("Key", null);
       expect(await memcached.del("Key")).to.be.eq(true);
     });
   });

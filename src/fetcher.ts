@@ -1,6 +1,11 @@
 import { Driver } from "./drivers/base";
 import * as crypto from "crypto";
 
+
+function isNotUndefinedOrNull<T>(x: T | undefined | null) {
+  return x !== undefined && x !== null;
+}
+
 export class MemcachedFetcher {
   private readonly keyHasher: (key: string) => string;
 
@@ -23,12 +28,14 @@ export class MemcachedFetcher {
 
     let value = await this.driver.get<Result>(hasheKey);
 
-    if (!value) {
+    if (!isNotUndefinedOrNull(value)) {
       value = await fetcher();
       await this.driver.set(hasheKey, value, lifetime);
+
+      return value;
     }
 
-    return value;
+    return value as Result;
   }
 
   public async del(key: string) {
@@ -47,8 +54,8 @@ export class MemcachedFetcher {
     }
 
     const { namespace, argToKey } = (() => {
-      if (typeof (key) === "string") {
-        return { namespace: key, argToKey: (arg: Argument) => arg.toString() };
+      if (typeof key === "string") {
+        return { namespace: key, argToKey: (arg: Argument) => String(arg) };
       } else {
         return { namespace: key[0], argToKey: key[1] };
       }
@@ -62,7 +69,7 @@ export class MemcachedFetcher {
     );
 
     const cached = await (this.driver.getMulti(Array.from(argsToKeyMap.values())) as Promise<{ [key: string]: Result }>);
-    const missingArgs = args.filter((arg) => cached[argsToKeyMap.get(arg)!] === undefined);
+    const missingArgs = args.filter((arg) => !isNotUndefinedOrNull(cached[argsToKeyMap.get(arg)!]));
 
     const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
 
@@ -78,7 +85,7 @@ export class MemcachedFetcher {
 
     return args.map((arg) => {
       const key = argsToKeyMap.get(arg)!;
-      if (cached[key]) {
+      if (isNotUndefinedOrNull(cached[key])) {
         return cached[key];
       } else {
         return fetched.get(arg)!;
