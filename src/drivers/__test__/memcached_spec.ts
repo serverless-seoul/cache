@@ -13,4 +13,4 @@ describe(MemcachedDriver.name, () => {
       expect(await memcached.del("Key")).to.be.eq(true);
     });
   });
-})
+});
