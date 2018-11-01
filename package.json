@@ -1,6 +1,6 @@
 {
   "name": "memcached-typed",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "Typescript Memcached Wrapper, with Promise and Template helper",
   "main": "./dst/index.js",
   "typings": "./dst/index.d.ts",
@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@types/ioredis": "^3.2.7",
-    "@vingle/memcache-plus": "^0.3.1",
+    "@vingle/memcache-plus": "^0.3.2",
     "ioredis": "^3.2.2"
   }
 }
