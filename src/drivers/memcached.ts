@@ -1,4 +1,4 @@
-const MemcachedPlus = require("memcache-plus");
+const MemcachedPlus = require("@vingle/memcache-plus");
 
 import { Driver } from "./base"
 
@@ -40,7 +40,7 @@ export class MemcachedDriver implements Driver {
     return await this.client.delete(key);
   }
 
-  public async flush<Result>() {
+  public async flush() {
     await this.client.flush();
   }
 }

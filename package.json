@@ -1,6 +1,6 @@
 {
   "name": "memcached-typed",
-  "version": "4.1.5",
+  "version": "4.2.0",
   "description": "Typescript Memcached Wrapper, with Promise and Template helper",
   "main": "./dst/index.js",
   "typings": "./dst/index.d.ts",
@@ -11,7 +11,7 @@
     "prepublish": "npm run build",
     "pretest": "npm run build",
     "ci:publish": "publish",
-    "test": "MEMCACHED_URL=127.0.0.1 REDIS_URL=redis://127.0.0.1/3 mocha dst/**/__test__/**/*.js"
+    "test": "MEMCACHED_URL=127.0.0.1:11211 REDIS_URL=redis://127.0.0.1/3 mocha -t 10000 dst/**/__test__/**/*.js"
   },
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@types/ioredis": "^3.2.7",
-    "ioredis": "^3.2.2",
-    "memcache-plus": "^0.2.18"
+    "@vingle/memcache-plus": "^0.3.1",
+    "ioredis": "^3.2.2"
   }
 }
