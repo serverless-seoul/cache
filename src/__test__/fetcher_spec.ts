@@ -10,7 +10,6 @@ import { MemcachedFetcher } from "../fetcher";
 describe(MemcachedFetcher.name, () => {
   [
     new MemcachedDriver(process.env.MEMCACHED_URL as string, { autoDiscovery: false }),
-    // new MemcachedDriver2("vingle-edge-stage.zwsblh.cfg.use1.cache.amazonaws.com", { autoDiscovery: true }),
     new RedisDriver(process.env.REDIS_URL as string),
   ].forEach((driver) => {
     context(`with ${driver.constructor.name}`, () => {
