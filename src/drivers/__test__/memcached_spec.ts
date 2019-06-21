@@ -5,7 +5,7 @@ import { MemcachedDriver } from "../memcached";
 describe(MemcachedDriver.name, () => {
   describe("#del", () => {
     it("should work", async () => {
-      const memcached = new MemcachedDriver(process.env.MEMCACHED_URL, { autoDiscovery: false });
+      const memcached = new MemcachedDriver(process.env.MEMCACHED_URL!, { autoDiscovery: false });
 
       expect(await memcached.del("Key")).to.be.eq(false);
 
