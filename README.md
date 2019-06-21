@@ -1,5 +1,7 @@
 # Memcached-Typed
 
+[![Build Status](https://travis-ci.com/balmbees/memcached-typed.svg?branch=master)](https://travis-ci.com/balmbees/memcached-typed)
+
 npm install memcached-typed --save
 
 1. Support Promise for every method
