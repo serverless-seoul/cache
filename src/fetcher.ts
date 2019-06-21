@@ -1,6 +1,5 @@
-import { Driver } from "./drivers/base";
 import * as crypto from "crypto";
-
+import { Driver } from "./drivers/base";
 
 function isNotUndefinedOrNull<T>(x: T | undefined | null) {
   return x !== undefined && x !== null;
@@ -39,8 +38,8 @@ export class MemcachedFetcher {
   }
 
   public async del(key: string) {
-    const hasheKey = this.keyHasher(key);
-    return await this.driver.del(hasheKey);
+    const hashedKey = this.keyHasher(key);
+    return await this.driver.del(hashedKey);
   }
 
   public async multiFetch<Argument, Result>(
@@ -63,12 +62,12 @@ export class MemcachedFetcher {
 
     const argsToKeyMap = new Map<Argument, string>(
       args.map((arg) => {
-        const key = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
-        return [arg, key] as [Argument, string];
+        const hashedKey = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
+        return [arg, hashedKey] as [Argument, string];
       })
     );
 
-    const cached = await (this.driver.getMulti(Array.from(argsToKeyMap.values())) as Promise<{ [key: string]: Result }>);
+    const cached = (await this.driver.getMulti(Array.from(argsToKeyMap.values()))) as { [key: string]: Result };
     const missingArgs = args.filter((arg) => !isNotUndefinedOrNull(cached[argsToKeyMap.get(arg)!]));
 
     const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
@@ -84,9 +83,10 @@ export class MemcachedFetcher {
     }));
 
     return args.map((arg) => {
-      const key = argsToKeyMap.get(arg)!;
-      if (isNotUndefinedOrNull(cached[key])) {
-        return cached[key];
+      const cacheKey = argsToKeyMap.get(arg)!;
+      const value = cached[cacheKey];
+      if (isNotUndefinedOrNull(value)) {
+        return value;
       } else {
         return fetched.get(arg)!;
       }
@@ -99,7 +99,7 @@ export class MemcachedFetcher {
   ) {
     const { namespace, argToKey } = (() => {
       if (typeof (key) === "string") {
-        return { namespace: key, argToKey: (arg: Argument) => arg.toString() };
+        return { namespace: key, argToKey: (arg: Argument) => String(arg) };
       } else {
         return { namespace: key[0], argToKey: key[1] };
       }
@@ -107,8 +107,8 @@ export class MemcachedFetcher {
 
     await Promise.all(
       args.map(async (arg) => {
-        const key = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
-        await this.driver.del(key);
+        const hashedKey = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
+        await this.driver.del(hashedKey);
       })
     );
   }
