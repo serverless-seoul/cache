@@ -1,6 +1,6 @@
-const MemcachedPlus = require("@vingle/memcache-plus");
+const MemcachedPlus = require("@vingle/memcache-plus"); // tslint:disable-line
 
-import { Driver } from "./base"
+import { Driver } from "./base";
 
 export class MemcachedDriver implements Driver {
   public client: any;
@@ -10,7 +10,7 @@ export class MemcachedDriver implements Driver {
       autodiscover: options.autoDiscovery || false,
       netTimeout: 500,
       reconnect: true,
-    })
+    });
   }
 
   public async get<Result>(key: string): Promise<Result | undefined> {
@@ -26,8 +26,9 @@ export class MemcachedDriver implements Driver {
     const values = await this.client.getMulti(keys) as { [key: string]: Result | undefined };
     const res: { [key: string]: Result | undefined } = {};
     for (const key in values) {
-      const value = values[key];
-      res[key] = value;
+      if (values.hasOwnProperty(key)) {
+        res[key] = values[key];
+      }
     }
     return res;
   }

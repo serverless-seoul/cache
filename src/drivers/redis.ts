@@ -1,7 +1,7 @@
 import * as BbPromise from "bluebird";
 import * as IORedis from "ioredis";
 
-import { Driver } from "./base"
+import { Driver } from "./base";
 
 export interface RedisDriverBaseOptions {
   enableClusterMode?: boolean;
@@ -18,7 +18,9 @@ export interface RedisDriverClusterModeOptions {
   ioredis?: IORedis.ClusterOptions;
 }
 
-export type RedisDriverOptions = RedisDriverBaseOptions | RedisDriverStandaloneModeOptions | RedisDriverClusterModeOptions;
+export type RedisDriverOptions = RedisDriverBaseOptions
+  | RedisDriverStandaloneModeOptions
+  | RedisDriverClusterModeOptions;
 
 export class RedisDriver implements Driver {
   public client: IORedis.Redis;
