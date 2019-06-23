@@ -24,15 +24,15 @@
   },
   "homepage": "https://github.com/balmbees/memcached-typed#readme",
   "devDependencies": {
-    "@types/chai": "^4.1.3",
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^8.10.49",
-    "@vingle/tslint-preset": "^1.0.0",
-    "chai": "^4.1.2",
-    "mocha": "^6.1.4",
-    "np": "^4.0.2",
-    "tslint": "^5.18.0",
-    "typescript": "^3.5.2"
+    "@types/chai": "4.1.3",
+    "@types/mocha": "5.2.7",
+    "@types/node": "8.10.49",
+    "@vingle/tslint-preset": "1.0.0",
+    "chai": "4.1.2",
+    "mocha": "6.1.4",
+    "np": "4.0.2",
+    "tslint": "5.18.0",
+    "typescript": "3.5.2"
   },
   "dependencies": {
     "@types/ioredis": "^3.2.7",
