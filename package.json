@@ -35,8 +35,8 @@
     "typescript": "3.5.2"
   },
   "dependencies": {
-    "@types/ioredis": "^3.2.7",
+    "@types/ioredis": "^4.0.0",
     "@vingle/memcache-plus": "^0.3.4",
-    "ioredis": "^3.2.2"
+    "ioredis": "^4.0.0"
   }
 }
