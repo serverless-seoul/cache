@@ -1,16 +1,18 @@
 language: node_js
 node_js:
-- '8'
-- '10'
+- lts/*
 services:
 - redis-server
-script:
-- npm run test
-deploy:
-  provider: npm
-  email: breath103@gmail.com
-  skip_cleanup: true
-  api_key:
-    secure: xUJp+tXSlNYeGeTlGvY/1kctUzOc8fPmGrTxLUCLYpTQj+RMAHuUePClL6Mk2PGlTd6XRXnBRhZtyaHLb2MpZNsmZC/qPJbSWldzHHvvIrMLKcxdm2D8e1uFl0YtUIUNsMe8pZasJU7z3AbDmR/dW3ytDGZCbELsP7pnqYYE/72bLhlYUKtVOobuGCjeluAbqPcALtO2G1ci90E2IMI7ntMFXaIslQK3iJibRZC5Ce0gUxZ5vUReWZKfarkT8mxvvfeWeLYthHetHg3gLQJJ4ou70gZzA5enlGMkmy2pyQ0a81TOyZlk6eGU3UyRLYHtV0+qudeFP0r2d6bXOeUX1jhZQPn0y2CeofIDK07MnwSPX/4HyFD/gYvDW2/gXlUNd10xs+hFehL40L5R5DYG44i275rrecXu7BklQ/tqTy8fRTiOriGaRoLYGFbNj+PRVgJ1a6bI1TzAEpvxnzYCyJeq/4Wv3xV45pnI7YajPXHLJLSsisoFvDsU+9GNN9pC219fsaUBBUAqaBvgHhGvBenIhdJOrVhWAX95W3WKXqPSXPLFPjMqNzp0pf/+om2tizdeWe5cnryTylZJujQjFPLHC/kKPnYHGoVZSIVKEabs9FE1gnV0xQOlyCl/+GbH+zD1+g7M6efGWLv5i3Q/sWAkt/Jrry6j+AJ0Pueu6y0=
-  on:
-    branch: master
+jobs:
+  include:
+  - stage: release
+    node_js: lts/8
+    deploy:
+      provider: script
+      skip_cleanup: true
+      script:
+      - npx semantic-release
+env:
+  global:
+  - secure: hNLh6RT68XbDOpb6eZZX9TjwRjlOLBAnUtRPT4QdudbiYpZjeAxWWj7mbuplOOLJ1tnOxs/LBJyXlpQrJa+FKjw5v+Yt0lGtXnr3P28VHPA8yKI5NYKcKYciDR+uF3Lo3d9evuR7kBU31L4AgeVnmiTy2Yp59RFCdniuQEs8E3XKwrw2J4nz/C2tiuDnHpNjovPq/+ycusp8Z0qq+qFOTBAvQ/v/0boi13dl38odhl28yk4MjvcwYs0uNXbWyjxzjuVV5r3wfKe+/MYJTDN0Pmsr5t1kBgtY3pl/SaKnDBJdEzeGzsnnWNciTEIZL3dl0yX7uwohaxU6DXwrRCpsY9qBR2atgnQoLLu9G9cn3gdIKcETtdgBhVlBUYvjCATINVso62m7LeMqHhd5g2DkYYdbiQ76I2gKR6t8x69EWjaY93E2vkHKSsDIRo6EvYY5AMK1XnBuN22/uIViKBcdAdRdkRgQCgLWWitCgGN8FqP86aN9PIxF/BUc53DlfyJNrduUyk4Q6qeeTtPhEEiA91ToyaJKVG3CTm3rtoSz6cDUkOB4RAEOYm6x/k5t1+PdpQsBUnqt96I6jAvrPwUr1roAA0xJMH5sZ60j+U3Vhg/tyDLlZYhx0kTwAAa/lkuLPrn7omH4kBig0ocK/7SYCBDqLZwV8irusN9o+1z5iIk=
+  - secure: HtPzlusca4nljtGKPCNObVMvAYdDvHzJC7Rg2J4ScPph8mTSpXt+7nEgd57YjKbCzU60vh3ao5ZrohqqHxQXG4pSKadWjRto+u1Y64VdoiIZ2jGjXhUMF9bjrl3v94z8ZbIeBkyb/Mo2nZ01/gwkg48dV9ntPMc2bqtT/6B6e2yaCVBSX+QoGYB5Z3khrs33dGdvscM6xyn79efC48fjGwdQjlMvucK+r2dGO/niq9kpF7dUkQG8oLTHRe5ALuyXIaRCJX/GqV9h/vyCc9ydHhKpW3Hpvd9pEVs4dK+ke0tm/LbXEfOcTfp8rJcCTULcdyU0bF0HIWg5m2UMDeWvIKTtymD//ge6MuuS+G7+y+EPy1NLxVe7Ng2FHLTFBEymA4tn9tXjFPiiLF0XW/AwDKQoEfdJX1D7w0ZObiG1ZdKFunlEKhdWXlH/X/8ETnoIYE38jhao/wE2AOyU5ykOI3j+Dxk7IpvxKU2m1kttajlie186Osm+MKVMSb29TFzXht6ULJ16mGOsM6lfmJbSrO/LPpNX56bkrlXfPPUAM8+SETFDCozdIQo3CeBR6xJ9iA64XBN6V88gRWza20YKRj7JNXjK+IY5hPALYTpNK3UzSx8FM05iWCC7oVjXKmOU+2NFjvAfF3slKTC+7b/k/2cxXO1xjg5uRP7Y63jfaZY=
