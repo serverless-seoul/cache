@@ -34,7 +34,6 @@
     "cz-conventional-changelog": "^2.1.0",
     "husky": "3.0.0",
     "mocha": "6.1.4",
-    "np": "4.0.2",
     "tslint": "5.18.0",
     "typescript": "^3.5.3"
   },
@@ -54,6 +53,8 @@
     }
   },
   "commitlint": {
-    "extends": ["@commitlint/config-conventional"]
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   }
 }
