@@ -2,26 +2,33 @@ import * as IORedis from "ioredis";
 
 import { Driver } from "./base";
 
-export interface RedisDriverOptions {
-  ioredis?: IORedis.RedisOptions;
+export interface RedisClusterDriverOptions {
+  ioredis?: IORedis.ClusterOptions;
 }
 
-export class RedisDriver implements Driver {
-  public client: IORedis.Redis;
+export class RedisClusterDriver implements Driver {
+  public client: IORedis.Redis & IORedis.Cluster;
 
-  constructor(private serverUrl: string, private options: RedisDriverOptions = {}) {
-    const DEFAULT_OPTIONS: IORedis.RedisOptions = {
-      retryStrategy(attempt) {
+  constructor(private serverUrl: string, private options: RedisClusterDriverOptions = {}) {
+    const DEFAULT_OPTIONS: IORedis.ClusterOptions = {
+      clusterRetryStrategy(attempt: number) {
         // use exponential backoff
         // 50 (Min) => 100 => 200 => 400 => 800 => 1600 => 2000 (Max)
         return Math.min(50 * Math.pow(2, attempt), 2000);
       },
+      redisOptions: {
+        retryStrategy(attempt) {
+          // use exponential backoff
+          // 50 (Min) => 100 => 200 => 400 => 800 => 1600 => 2000 (Max)
+          return Math.min(50 * Math.pow(2, attempt), 2000);
+        },
+      },
     };
 
-    this.client = new IORedis(serverUrl, {
+    this.client = new IORedis.Cluster([serverUrl], {
       ...DEFAULT_OPTIONS,
       ...(options.ioredis || {}),
-    });
+    }) as IORedis.Redis & IORedis.Cluster;
   }
 
   public async touch(key: string, lifetime: number) {
@@ -49,13 +56,17 @@ export class RedisDriver implements Driver {
     }
   }
 
+  // In cluster mode, MGET (multiple get) command requires all keys must be same key slot
+  // if client does not handle this, redis will give "CROSSSLOT Keys in request don't hash to the same slot" Error.
+  //
+  // this is temporary workaround to eliminate CROSSSLOT issue.
+  // Using this method in Cluster Mode highly not recommended!
   public async getMulti<Result>(keys: string[]) {
     if (keys.length === 0) {
       return {};
     }
 
-    const response = await this.client.mget(...keys);
-
+    const response = await Promise.all(keys.map((key) => this.client.get(key)));
     return keys.reduce((hash, key, index) => {
       const val = response[index];
 
@@ -66,7 +77,7 @@ export class RedisDriver implements Driver {
         try {
           hash[key] = JSON.parse(val);
         } catch (e) {
-          hash[key] = val;
+          hash[key] = val as any;
         }
       }
 
