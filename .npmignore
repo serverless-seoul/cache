@@ -1,6 +1,12 @@
-dst/__test__
+dst/**/__test__
 src
 .travis.yml
 .npm
 .idea
 .vscode
+.github
+.releaserc.json
+tsconfig*.json
+tslint.json
+renovate.json
+CODE_OF_CONDUCT.md
