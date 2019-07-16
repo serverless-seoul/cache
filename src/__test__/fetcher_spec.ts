@@ -1,7 +1,6 @@
 import { expect } from "chai";
 
 import {
-  MemcachedDriver,
   RedisDriver
 } from "../drivers";
 
@@ -9,7 +8,6 @@ import { MemcachedFetcher } from "../fetcher";
 
 describe(MemcachedFetcher.name, () => {
   [
-    new MemcachedDriver(process.env.MEMCACHED_URL as string, { autoDiscovery: false }),
     new RedisDriver(process.env.REDIS_URL as string),
   ].forEach((driver) => {
     context(`with ${driver.constructor.name}`, () => {

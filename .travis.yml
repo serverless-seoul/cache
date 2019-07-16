@@ -4,7 +4,6 @@ node_js:
 - '10'
 services:
 - redis-server
-- memcached
 script:
 - npm run test
 deploy:
