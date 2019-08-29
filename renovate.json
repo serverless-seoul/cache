@@ -1,6 +1,8 @@
 {
   "extends": [
     "@vingle",
-    "@vingle:nodejs8"
+    "@vingle:nodejs8",
+    "@vingle:semantic-commit",
+    "@vingle:assignee:backend"
   ]
 }
