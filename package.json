@@ -27,7 +27,7 @@
     "@types/chai": "4.2.2",
     "@types/mocha": "5.2.7",
     "@types/node": "8.10.53",
-    "@vingle/commitlint-preset": "1.0.2",
+    "@vingle/commitlint-preset": "1.0.3",
     "@vingle/semantic-release-config": "1.0.2",
     "@vingle/tslint-preset": "1.0.0",
     "chai": "4.2.0",
