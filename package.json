@@ -26,7 +26,7 @@
   "devDependencies": {
     "@types/chai": "4.2.4",
     "@types/mocha": "5.2.7",
-    "@types/node": "8.10.56",
+    "@types/node": "8.10.58",
     "@vingle/commitlint-preset": "1.0.3",
     "@vingle/semantic-release-config": "1.0.3",
     "@vingle/tslint-preset": "1.0.0",
