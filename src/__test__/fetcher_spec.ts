@@ -54,7 +54,7 @@ describe(MemcachedFetcher.name, () => {
           expect(res3).to.deep.eq([]);
         });
 
-        it("should work with value <0>", async () => {
+        it("should cache the value <0>", async () => {
           const res1 = await fetcher.multiFetch(
             [1, 2, 0],
             "v1",
@@ -70,6 +70,58 @@ describe(MemcachedFetcher.name, () => {
             async (args) => args.map(__ => 100)
           );
           expect(res2).to.deep.eq([1, 2, 0, 0]);
+        });
+
+        it("should cache the value <null>", async () => {
+          const res1 = await fetcher.multiFetch(
+            [1, 2, 3, 4],
+            "v1",
+            3600,
+            async (args) => {
+              return args.map(i => {
+                if (i % 2 === 0) {
+                  return null;
+                } else {
+                  return i;
+                }
+              });
+            }
+          );
+          expect(res1).to.deep.eq([1, null, 3, null]);
+
+          const res2 = await fetcher.multiFetch(
+            [1, 2, 3, 4],
+            "v1",
+            3600,
+            async (args) => args.map(__ => -1)
+          );
+          expect(res2).to.deep.eq([1, null, 3, null]);
+        });
+
+        it("should not cache the value undefined, and revalidate next time", async () => {
+          const res1 = await fetcher.multiFetch(
+            [1, 2, 3, 4],
+            "v1",
+            3600,
+            async (args) => {
+              return args.map(i => {
+                if (i % 2 === 0) {
+                  return undefined;
+                } else {
+                  return i;
+                }
+              });
+            }
+          );
+          expect(res1).to.deep.eq([1, undefined, 3, undefined]);
+
+          const res2 = await fetcher.multiFetch(
+            [1, 2, 3, 4],
+            "v1",
+            3600,
+            async (args) => args.map(__ => -1)
+          );
+          expect(res2).to.deep.eq([1, -1, 3, -1]);
         });
       });
 
