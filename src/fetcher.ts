@@ -1,8 +1,8 @@
 import * as crypto from "crypto";
 import { Driver } from "./drivers/base";
 
-function isNotUndefinedOrNull<T>(x: T | undefined | null): x is T {
-  return x !== undefined && x !== null;
+function isNotUndefined<T>(x: T | undefined): x is T {
+  return x !== undefined;
 }
 
 export class MemcachedFetcher {
@@ -25,7 +25,7 @@ export class MemcachedFetcher {
 
     let value = await this.driver.get<Result>(hash);
 
-    if (!isNotUndefinedOrNull(value)) {
+    if (!isNotUndefined(value)) {
       value = await fetcher();
       await this.driver.set(hash, value, lifetime);
     }
@@ -64,7 +64,7 @@ export class MemcachedFetcher {
     );
 
     const cached = await this.driver.getMulti<Result>(Array.from(argsToKeyMap.values()));
-    const missingArgs = args.filter((arg) => !isNotUndefinedOrNull(cached[argsToKeyMap.get(arg)!]));
+    const missingArgs = args.filter((arg) => !isNotUndefined(cached[argsToKeyMap.get(arg)!]));
 
     const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
 
@@ -75,15 +75,19 @@ export class MemcachedFetcher {
       missingArgs.map((arg, index) => [arg, fetchedArray[index]] as [Argument, Result]));
 
     await Promise.all(
-      Array.from(fetched).map( ([arg, result]) =>
-        this.driver.set(argsToKeyMap.get(arg)!, result, lifetime),
-      ),
+      Array.from(fetched).map(([arg, result]) => {
+        if (isNotUndefined(result)) {
+          this.driver.set(argsToKeyMap.get(arg)!, result, lifetime);
+        } else {
+          // if fetcher returns undefined, that means user intentionally not want to cache this value
+        }
+      }),
     );
 
     return args.map((arg) => {
       const hash = argsToKeyMap.get(arg)!;
       const value = cached[hash];
-      if (isNotUndefinedOrNull(value)) {
+      if (isNotUndefined(value)) {
         return value;
       } else {
         return fetched.get(arg)!;
