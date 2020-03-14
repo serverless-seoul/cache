@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/balmbees/memcached-typed#readme",
   "devDependencies": {
-    "@types/chai": "4.2.4",
+    "@types/chai": "4.2.11",
     "@types/mocha": "5.2.7",
     "@types/node": "8.10.59",
     "@vingle/commitlint-preset": "1.0.3",
