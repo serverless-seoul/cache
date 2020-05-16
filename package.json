@@ -34,7 +34,7 @@
     "husky": "3.0.9",
     "mocha": "6.2.2",
     "tslint": "5.20.1",
-    "typescript": "3.7.2"
+    "typescript": "3.9.2"
   },
   "dependencies": {
     "@types/ioredis": "^4.0.13",
