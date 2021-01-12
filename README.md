@@ -1,12 +1,21 @@
-# Memcached-Typed
+# @serverless-seoul/cache
 
-[![Build Status](https://travis-ci.com/balmbees/memcached-typed.svg?branch=master)](https://travis-ci.com/balmbees/memcached-typed)
+[![Build Status](https://github.com/serverless-seoul/cache/workflows/workflow/badge.svg)](https://github.com/serverless-seoul/cache/actions)
 
-npm install memcached-typed --save
+### Installation
+
+```bash
+$ npm install @serverless-seoul/cache --save
+```
+
+### Features
 
 1. Support Promise for every method
 2. Support <T> for get / set methods
 3. Advanced cache-access pattern such as fetch.
+
+
+### Example
 
 ```typescript
 describe("#fetchMulti", () => {
@@ -48,6 +57,7 @@ describe("#fetchMulti", () => {
 });
 ```
 
-# AWS Elasticache autoDiscovery
+### Supported Drivers
 
-this only supports > 1.4.14
+- Redis
+- Clustered Redis

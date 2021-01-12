@@ -1,5 +1,5 @@
 {
-  "name": "memcached-typed",
+  "name": "@serverless-seoul/cache",
   "version": "7.0.0",
   "description": "Typescript cached fetching helper",
   "main": "./dst/index.js",
