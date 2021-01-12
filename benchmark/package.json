@@ -1,0 +1,22 @@
+{
+  "name": "benchmark",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ls *.ts | xargs -n 1 ts-node"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cronometro": "^0.8.0",
+    "debug": "^4.3.1",
+    "memcached-typed": "^7.0.0",
+    "ts-node": "^9.1.1"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.5",
+    "@types/node": "^12.19.12"
+  }
+}
