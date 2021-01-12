@@ -7,7 +7,7 @@ export interface RedisDriverOptions {
 }
 
 export class RedisDriver implements Driver {
-  public client: IORedis.Redis;
+  public readonly client: IORedis.Redis;
 
   constructor(private serverUrl: string, private options: RedisDriverOptions = {}) {
     const DEFAULT_OPTIONS: IORedis.RedisOptions = {

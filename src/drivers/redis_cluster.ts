@@ -7,7 +7,7 @@ export interface RedisClusterDriverOptions {
 }
 
 export class RedisClusterDriver implements Driver {
-  public client: IORedis.Cluster;
+  public readonly client: IORedis.Cluster;
 
   constructor(private serverUrl: string, private options: RedisClusterDriverOptions = {}) {
     const DEFAULT_OPTIONS: IORedis.ClusterOptions & {
