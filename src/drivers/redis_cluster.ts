@@ -56,6 +56,10 @@ export class RedisClusterDriver implements Driver {
     }
   }
 
+  public async ttl(key: string): Promise<number> {
+    return await this.client.pttl(key);
+  }
+
   // In cluster mode, MGET (multiple get) command requires all keys must be same key slot
   // if client does not handle this, redis will give "CROSSSLOT Keys in request don't hash to the same slot" Error.
   //
