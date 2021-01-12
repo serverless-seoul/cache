@@ -7,7 +7,7 @@ export interface RedisClusterDriverOptions {
 }
 
 export class RedisClusterDriver implements Driver {
-  public client: IORedis.Redis & IORedis.Cluster;
+  public client: IORedis.Cluster;
 
   constructor(private serverUrl: string, private options: RedisClusterDriverOptions = {}) {
     const DEFAULT_OPTIONS: IORedis.ClusterOptions = {
@@ -28,7 +28,7 @@ export class RedisClusterDriver implements Driver {
     this.client = new IORedis.Cluster([serverUrl], {
       ...DEFAULT_OPTIONS,
       ...(options.ioredis || {}),
-    }) as IORedis.Redis & IORedis.Cluster;
+    });
   }
 
   public async touch(key: string, lifetime: number) {
@@ -90,7 +90,7 @@ export class RedisClusterDriver implements Driver {
 
     // @see https://redis.io/commands/setex#return-value
     // @type Simple string Reply
-    let reply: string;
+    let reply: string | null;
     if (!lifetime) {
       reply = await this.client.set(key, serialized);
     } else {

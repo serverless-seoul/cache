@@ -66,7 +66,7 @@ export class RedisDriver implements Driver {
         try {
           hash[key] = JSON.parse(val);
         } catch (e) {
-          hash[key] = val;
+          hash[key] = val as any;
         }
       }
 
@@ -79,7 +79,7 @@ export class RedisDriver implements Driver {
 
     // @see https://redis.io/commands/setex#return-value
     // @type Simple string Reply
-    let reply: string;
+    let reply: string | null;
     if (!lifetime) {
       reply = await this.client.set(key, serialized);
     } else {
