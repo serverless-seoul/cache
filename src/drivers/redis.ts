@@ -11,6 +11,10 @@ export class RedisDriver implements Driver {
 
   constructor(private serverUrl: string, private options: RedisDriverOptions = {}) {
     const DEFAULT_OPTIONS: IORedis.RedisOptions = {
+      // In our experiment, autopipeline didn't improve overall performance.
+      // We had 20% (approx.) performance penalty regardless of its cluster configuration and redis engine version.
+      // it seems that ioredis has some performance issues with automatic pipelining, due to Node.js 6 compatibility.
+      // enableAutoPipelining: true,
       retryStrategy(attempt) {
         // use exponential backoff
         // 50 (Min) => 100 => 200 => 400 => 800 => 1600 => 2000 (Max)

@@ -1,9 +1,10 @@
 import * as crypto from "crypto";
 import { Driver } from "./drivers/base";
 
-function isNotUndefined<T>(x: T | undefined): x is T {
-  return x !== undefined;
-}
+type Lifetime = {
+  cacheTime: number;
+  staleTime?: number;
+};
 
 export class MemcachedFetcher {
   private readonly keyHasher: (key: string) => string;
@@ -20,17 +21,35 @@ export class MemcachedFetcher {
     }
   }
 
-  public async fetch<Result>(key: string, lifetime: number, fetcher: () => Promise<Result>): Promise<Result> {
+  public async fetch<Result>(key: string, lifetime: number | Lifetime, fetcher: () => Promise<Result>): Promise<Result> {
     const hash = this.keyHasher(key);
 
-    let value = await this.driver.get<Result>(hash);
+    const { cacheTime, staleTime = 0 } = typeof lifetime === "number"
+      ? { cacheTime: lifetime }
+      : lifetime;
 
-    if (!isNotUndefined(value)) {
-      value = await fetcher();
-      await this.driver.set(hash, value, lifetime);
+    const [cached, ttl] = await Promise.all([
+      this.driver.get<Result>(hash),
+      staleTime ? this.driver.ttl(hash) : Promise.resolve(0),
+    ]);
+
+    if (!this.isValue(cached) || this.isStale(ttl, staleTime)) {
+      try {
+        const fetched = await fetcher();
+        await this.driver.set(hash, fetched, cacheTime);
+        return fetched;
+      } catch (e) {
+        // If cached value is available, swallow thrown error and reuse cache
+        if (this.isValue(cached)) {
+          return cached;
+        }
+
+        // Otherwise throw error
+        throw e;
+      }
     }
 
-    return value;
+    return cached;
   }
 
   public async del(key: string) {
@@ -64,7 +83,7 @@ export class MemcachedFetcher {
     );
 
     const cached = await this.driver.getMulti<Result>(Array.from(argsToKeyMap.values()));
-    const missingArgs = args.filter((arg) => !isNotUndefined(cached[argsToKeyMap.get(arg)!]));
+    const missingArgs = args.filter((arg) => !this.isValue(cached[argsToKeyMap.get(arg)!]));
 
     const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
 
@@ -75,9 +94,9 @@ export class MemcachedFetcher {
       missingArgs.map((arg, index) => [arg, fetchedArray[index]] as [Argument, Result]));
 
     await Promise.all(
-      Array.from(fetched).map(([arg, result]) => {
-        if (isNotUndefined(result)) {
-          this.driver.set(argsToKeyMap.get(arg)!, result, lifetime);
+      Array.from(fetched).map(async ([arg, result]) => {
+        if (this.isValue(result)) {
+          await this.driver.set(argsToKeyMap.get(arg)!, result, lifetime);
         } else {
           // if fetcher returns undefined, that means user intentionally not want to cache this value
         }
@@ -87,31 +106,18 @@ export class MemcachedFetcher {
     return args.map((arg) => {
       const hash = argsToKeyMap.get(arg)!;
       const value = cached[hash];
-      if (isNotUndefined(value)) {
+      if (this.isValue(value)) {
         return value;
       } else {
         return fetched.get(arg)!;
       }
     });
   }
+  private isStale(ttl: number, staleTime?: number): boolean {
+    return !!staleTime && ttl > 0 && staleTime > ttl;
+  }
 
-  public async multiFetchDelete<Argument, Result>(
-    args: Argument[],
-    key: string | [string, (args: Argument) => { toString(): string }]
-  ) {
-    const { namespace, argToKey } = (() => {
-      if (typeof (key) === "string") {
-        return { namespace: key, argToKey: (arg: Argument) => String(arg) };
-      } else {
-        return { namespace: key[0], argToKey: key[1] };
-      }
-    })();
-
-    await Promise.all(
-      args.map(async (arg) => {
-        const hashedKey = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
-        await this.driver.del(hashedKey);
-      })
-    );
+  private isValue<T>(value: T | undefined | null): value is T {
+    return value !== undefined && value !== null;
   }
 }

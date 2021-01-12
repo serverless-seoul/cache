@@ -10,7 +10,13 @@ export class RedisClusterDriver implements Driver {
   public client: IORedis.Cluster;
 
   constructor(private serverUrl: string, private options: RedisClusterDriverOptions = {}) {
-    const DEFAULT_OPTIONS: IORedis.ClusterOptions = {
+    const DEFAULT_OPTIONS: IORedis.ClusterOptions & {
+      enableAutoPipelining?: boolean;
+    } = {
+      // In our experiment, autopipeline didn't improve overall performance.
+      // We had 20% (approx.) performance penalty regardless of cluster configuration and redis engine version.
+      // it seems that ioredis has some performance issues with automatic pipelining, due to Node.js 6 compatibility.
+      // enableAutoPipelining: true,
       clusterRetryStrategy(attempt: number) {
         // use exponential backoff
         // 50 (Min) => 100 => 200 => 400 => 800 => 1600 => 2000 (Max)
