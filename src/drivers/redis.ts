@@ -54,7 +54,7 @@ export class RedisDriver implements Driver {
   }
 
   public async ttl(key: string): Promise<number> {
-    return await this.client.pttl(key);
+    return await this.client.ttl(key);
   }
 
   public async getMulti<Result>(keys: string[]) {

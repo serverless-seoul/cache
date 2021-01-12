@@ -63,7 +63,7 @@ export class RedisClusterDriver implements Driver {
   }
 
   public async ttl(key: string): Promise<number> {
-    return await this.client.pttl(key);
+    return await this.client.ttl(key);
   }
 
   // In cluster mode, MGET (multiple get) command requires all keys must be same key slot
