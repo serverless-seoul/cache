@@ -33,7 +33,7 @@ export class MemcachedFetcher {
       staleTime ? this.driver.ttl(hash) : Promise.resolve(0),
     ]);
 
-    if (!this.isValue(cached) || this.isStale(ttl, staleTime)) {
+    if (!this.isValue(cached) || this.isStale(ttl, cacheTime, staleTime)) {
       try {
         const fetched = await fetcher();
         await this.driver.set(hash, fetched, cacheTime);
@@ -134,8 +134,8 @@ export class MemcachedFetcher {
     );
   }
 
-  private isStale(ttl: number, staleTime?: number): boolean {
-    return !!staleTime && ttl > 0 && staleTime > ttl;
+  private isStale(ttl: number, cacheTime: number, staleTime?: number): boolean {
+    return !!staleTime && ttl > 0 && (cacheTime - staleTime) > ttl;
   }
 
   private isValue<T>(value: T | undefined | null): value is T {

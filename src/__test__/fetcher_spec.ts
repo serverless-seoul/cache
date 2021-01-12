@@ -34,14 +34,14 @@ describe(MemcachedFetcher.name, () => {
         });
 
         it("should update stale cache", async () => {
-          await fetcher.fetch("fetch", { cacheTime: 3600, staleTime: 3595 }, async () => ({
+          await fetcher.fetch("fetch", { cacheTime: 3600, staleTime: 3 }, async () => ({
             fake: "xoxo",
           }));
 
-          await sleep(5500);
+          await sleep(3500);
 
           const fn = sinon.fake.resolves({ fake: "yes" });
-          const res = await fetcher.fetch("fetch", { cacheTime: 3600, staleTime: 3595 }, fn);
+          const res = await fetcher.fetch("fetch", { cacheTime: 3600, staleTime: 3 }, fn);
           expect(res).to.deep.eq({ fake: "yes" });
         });
 
