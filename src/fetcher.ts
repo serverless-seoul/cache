@@ -113,6 +113,27 @@ export class MemcachedFetcher {
       }
     });
   }
+
+  public async multiFetchDelete<Argument, Result>(
+    args: Argument[],
+    key: string | [string, (args: Argument) => { toString(): string }]
+  ) {
+    const { namespace, argToKey } = (() => {
+      if (typeof (key) === "string") {
+        return { namespace: key, argToKey: (arg: Argument) => String(arg) };
+      } else {
+        return { namespace: key[0], argToKey: key[1] };
+      }
+    })();
+
+    await Promise.all(
+      args.map(async (arg) => {
+        const hashedKey = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
+        await this.driver.del(hashedKey);
+      })
+    );
+  }
+
   private isStale(ttl: number, staleTime?: number): boolean {
     return !!staleTime && ttl > 0 && staleTime > ttl;
   }
