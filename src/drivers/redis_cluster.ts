@@ -58,7 +58,7 @@ export class RedisClusterDriver implements Driver {
     try {
       return JSON.parse(response) as Result;
     } catch (e) {
-      return response as any; // if failed to decode serialized value, return raw value instead.
+      return undefined; // if failed to decode serialized value, treat as undefined value
     }
   }
 

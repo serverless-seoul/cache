@@ -74,7 +74,7 @@ export class RedisDriver implements Driver {
         try {
           hash[key] = JSON.parse(val);
         } catch (e) {
-          hash[key] = val as any;
+          hash[key] = undefined; // if failed to decode serialized value, treat as undefined value
         }
       }
 
