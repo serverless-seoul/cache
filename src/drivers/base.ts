@@ -7,6 +7,13 @@ export interface Driver {
   get<Result>(key: string): Promise<Result | undefined>;
 
   /**
+   * Get remaining TTL for the given key.
+   * @param key
+   * @Returns Promise<number>
+   */
+  ttl(key: string): Promise<number>;
+
+  /**
    * Retrieves a bunch of values from multiple keys.
    * @param keys all the keys that needs to be fetched
    * @return Promise<Result>

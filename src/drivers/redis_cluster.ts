@@ -7,10 +7,16 @@ export interface RedisClusterDriverOptions {
 }
 
 export class RedisClusterDriver implements Driver {
-  public client: IORedis.Redis & IORedis.Cluster;
+  public readonly client: IORedis.Cluster;
 
   constructor(private serverUrl: string, private options: RedisClusterDriverOptions = {}) {
-    const DEFAULT_OPTIONS: IORedis.ClusterOptions = {
+    const DEFAULT_OPTIONS: IORedis.ClusterOptions & {
+      enableAutoPipelining?: boolean;
+    } = {
+      // In our experiment, autopipeline didn't improve overall performance.
+      // We had 20% (approx.) performance penalty regardless of cluster configuration and redis engine version.
+      // it seems that ioredis has some performance issues with automatic pipelining, due to Node.js 6 compatibility.
+      // enableAutoPipelining: true,
       clusterRetryStrategy(attempt: number) {
         // use exponential backoff
         // 50 (Min) => 100 => 200 => 400 => 800 => 1600 => 2000 (Max)
@@ -28,7 +34,7 @@ export class RedisClusterDriver implements Driver {
     this.client = new IORedis.Cluster([serverUrl], {
       ...DEFAULT_OPTIONS,
       ...(options.ioredis || {}),
-    }) as IORedis.Redis & IORedis.Cluster;
+    });
   }
 
   public async touch(key: string, lifetime: number) {
@@ -52,8 +58,12 @@ export class RedisClusterDriver implements Driver {
     try {
       return JSON.parse(response) as Result;
     } catch (e) {
-      return response as any; // if failed to decode serialized value, return raw value instead.
+      return undefined; // if failed to decode serialized value, treat as undefined value
     }
+  }
+
+  public async ttl(key: string): Promise<number> {
+    return await this.client.ttl(key);
   }
 
   // In cluster mode, MGET (multiple get) command requires all keys must be same key slot
@@ -90,7 +100,7 @@ export class RedisClusterDriver implements Driver {
 
     // @see https://redis.io/commands/setex#return-value
     // @type Simple string Reply
-    let reply: string;
+    let reply: string | null;
     if (!lifetime) {
       reply = await this.client.set(key, serialized);
     } else {

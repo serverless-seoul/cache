@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2017",
+    "target": "es2019",
     "declaration": true,
     "noImplicitAny": true,
     "sourceMap": true,
+    "rootDir": "src",
     "outDir": "dst",
     "strictNullChecks": true,
     "strict": true

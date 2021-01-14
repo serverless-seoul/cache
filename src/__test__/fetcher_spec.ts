@@ -1,10 +1,13 @@
 import { expect } from "chai";
+import * as sinon from "sinon";
 
 import {
   RedisDriver
 } from "../drivers";
 
 import { MemcachedFetcher } from "../fetcher";
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 describe(MemcachedFetcher.name, () => {
   [
@@ -15,6 +18,45 @@ describe(MemcachedFetcher.name, () => {
 
       beforeEach(async () => {
         await driver.flush();
+      });
+
+      describe("#fetch", () => {
+        it("should cache value", async () => {
+          const fn = sinon.fake.resolves({ fake: 3 });
+
+          const v1 = await fetcher.fetch("fetch", 60, fn);
+          expect(fn.callCount).to.eq(1);
+          expect(v1).to.deep.eq({ fake: 3 });
+
+          const v2 = await fetcher.fetch("fetch", 60, fn);
+          expect(fn.callCount).to.eq(1);
+          expect(v2).to.deep.eq({ fake: 3 });
+        });
+
+        it("should update stale cache", async () => {
+          await fetcher.fetch("fetch", { cacheTime: 3600, staleTime: 3 }, async () => ({
+            fake: "xoxo",
+          }));
+
+          await sleep(3500);
+
+          const fn = sinon.fake.resolves({ fake: "yes" });
+          const res = await fetcher.fetch("fetch", { cacheTime: 3600, staleTime: 3 }, fn);
+          expect(res).to.deep.eq({ fake: "yes" });
+        });
+
+        it("should return stale cache if fetcher thrown an error", async () => {
+          await fetcher.fetch("fetch", { cacheTime: 10, staleTime: 5 }, async () => ({
+            fake: "xoxo",
+          }));
+
+          await sleep(5500);
+
+          const fn = sinon.fake.rejects(new Error("MOCKED"));
+          const res = await fetcher.fetch("fetch", { cacheTime: 10, staleTime: 5 }, fn);
+
+          expect(res).to.deep.eq({ fake: "xoxo" });
+        });
       });
 
       describe("#multiFetch", () => {

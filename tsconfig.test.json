@@ -1,15 +1,4 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2017",
-    "declaration": true,
-    "noImplicitAny": true,
-    "sourceMap": true,
-    "outDir": "dst",
-    "strictNullChecks": true,
-    "strict": true
-  },
-  "include": [
-    "src/**/*"
-  ]
+  "extends": "./tsconfig.json",
+  "exclude": []
 }

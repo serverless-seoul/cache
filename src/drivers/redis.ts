@@ -7,10 +7,14 @@ export interface RedisDriverOptions {
 }
 
 export class RedisDriver implements Driver {
-  public client: IORedis.Redis;
+  public readonly client: IORedis.Redis;
 
   constructor(private serverUrl: string, private options: RedisDriverOptions = {}) {
     const DEFAULT_OPTIONS: IORedis.RedisOptions = {
+      // In our experiment, autopipeline didn't improve overall performance.
+      // We had 20% (approx.) performance penalty regardless of its cluster configuration and redis engine version.
+      // it seems that ioredis has some performance issues with automatic pipelining, due to Node.js 6 compatibility.
+      // enableAutoPipelining: true,
       retryStrategy(attempt) {
         // use exponential backoff
         // 50 (Min) => 100 => 200 => 400 => 800 => 1600 => 2000 (Max)
@@ -49,6 +53,10 @@ export class RedisDriver implements Driver {
     }
   }
 
+  public async ttl(key: string): Promise<number> {
+    return await this.client.ttl(key);
+  }
+
   public async getMulti<Result>(keys: string[]) {
     if (keys.length === 0) {
       return {};
@@ -66,7 +74,7 @@ export class RedisDriver implements Driver {
         try {
           hash[key] = JSON.parse(val);
         } catch (e) {
-          hash[key] = val;
+          hash[key] = undefined; // if failed to decode serialized value, treat as undefined value
         }
       }
 
@@ -79,7 +87,7 @@ export class RedisDriver implements Driver {
 
     // @see https://redis.io/commands/setex#return-value
     // @type Simple string Reply
-    let reply: string;
+    let reply: string | null;
     if (!lifetime) {
       reply = await this.client.set(key, serialized);
     } else {
