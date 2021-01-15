@@ -6,6 +6,7 @@ src
 .vscode
 .github
 .releaserc.json
+benchmark
 tsconfig*.json
 tslint.json
 renovate.json
