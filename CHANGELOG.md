@@ -1,3 +1,10 @@
+## [8.0.1](https://github.com/serverless-seoul/cache/compare/v8.0.0...v8.0.1) (2021-01-15)
+
+
+### Bug Fixes
+
+* update preset ([92d48c3](https://github.com/serverless-seoul/cache/commit/92d48c3f1d18fafc87dfb0c7d6b79e114cb44e36))
+
 # [8.0.0](https://github.com/balmbees/memcached-typed/compare/v7.0.0...v8.0.0) (2021-01-15)
 
 
