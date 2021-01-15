@@ -1,6 +1,10 @@
 {
   "name": "@serverless-seoul/cache",
   "version": "8.0.0",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Typescript cached fetching helper",
   "main": "./dst/index.js",
   "typings": "./dst/index.d.ts",
