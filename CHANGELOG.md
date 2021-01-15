@@ -1,3 +1,10 @@
+## [8.0.2](https://github.com/serverless-seoul/cache/compare/v8.0.1...v8.0.2) (2021-01-15)
+
+
+### Bug Fixes
+
+* **package:** remove benchmark scripts from npm tarball ([89f626b](https://github.com/serverless-seoul/cache/commit/89f626baadea61d74ed6cc70c4f06b3c5d8a19df))
+
 ## [8.0.1](https://github.com/serverless-seoul/cache/compare/v8.0.0...v8.0.1) (2021-01-15)
 
 
