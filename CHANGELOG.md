@@ -1,3 +1,10 @@
+## [8.0.3](https://github.com/serverless-seoul/cache/compare/v8.0.2...v8.0.3) (2021-06-30)
+
+
+### Bug Fixes
+
+* **deps:** update ioredis to v4.27.6 ([5270914](https://github.com/serverless-seoul/cache/commit/527091487accf1ccfbb7291745b71914ab815e10))
+
 ## [8.0.2](https://github.com/serverless-seoul/cache/compare/v8.0.1...v8.0.2) (2021-01-15)
 
 
