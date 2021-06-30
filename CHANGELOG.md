@@ -1,3 +1,10 @@
+## [8.0.4](https://github.com/serverless-seoul/cache/compare/v8.0.3...v8.0.4) (2021-06-30)
+
+
+### Bug Fixes
+
+* **deps:** update dependency ts-node to v10 ([#49](https://github.com/serverless-seoul/cache/issues/49)) ([dd2bc46](https://github.com/serverless-seoul/cache/commit/dd2bc461d95d6a0de421d00e0d02c97ac2bcf551))
+
 ## [8.0.3](https://github.com/serverless-seoul/cache/compare/v8.0.2...v8.0.3) (2021-06-30)
 
 
