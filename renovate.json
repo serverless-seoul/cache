@@ -2,6 +2,7 @@
   "extends": [
     "@prescott",
     "@prescott:nodejs12",
+    "@prescott:lambda",
     "@prescott:semantic-commit"
   ]
 }
