@@ -32,7 +32,7 @@
   "homepage": "https://github.com/serverless-seoul/cache#readme",
   "devDependencies": {
     "@catchfashion/commitlint-preset": "1.1.0",
-    "@catchfashion/semantic-release-config": "1.0.2",
+    "@catchfashion/semantic-release-config": "1.1.0",
     "@catchfashion/tslint-preset": "1.1.2",
     "@types/chai": "4.2.22",
     "@types/mocha": "9.0.0",
