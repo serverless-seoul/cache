@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cronometro": "^0.8.0",
+    "cronometro": "^1.0.0",
     "debug": "^4.3.1",
     "memcached-typed": "^7.0.0",
     "ts-node": "^10.0.0"
