@@ -1,3 +1,10 @@
+## [8.0.6](https://github.com/serverless-seoul/cache/compare/v8.0.5...v8.0.6) (2021-10-12)
+
+
+### Performance Improvements
+
+* trigger build ([d90b855](https://github.com/serverless-seoul/cache/commit/d90b855b5e09c8484d943c53a94090a2a5dfb9e9))
+
 ## [8.0.5](https://github.com/serverless-seoul/cache/compare/v8.0.4...v8.0.5) (2021-10-12)
 
 
