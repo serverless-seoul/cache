@@ -1,3 +1,10 @@
+# [8.1.0](https://github.com/serverless-seoul/cache/compare/v8.0.5...v8.1.0) (2021-10-12)
+
+
+### Features
+
+* **trigger:** trigger build ([91e4602](https://github.com/serverless-seoul/cache/commit/91e4602db00955bb738a4d23b39354045f86ae19))
+
 ## [8.0.5](https://github.com/serverless-seoul/cache/compare/v8.0.4...v8.0.5) (2021-10-12)
 
 
