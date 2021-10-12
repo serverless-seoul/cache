@@ -1,3 +1,10 @@
+## [8.0.5](https://github.com/serverless-seoul/cache/compare/v8.0.4...v8.0.5) (2021-10-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency cronometro to v1 ([12f92c0](https://github.com/serverless-seoul/cache/commit/12f92c0f3879433e1d440234e4d052ef5b3d0c28))
+
 ## [8.0.4](https://github.com/serverless-seoul/cache/compare/v8.0.3...v8.0.4) (2021-06-30)
 
 
