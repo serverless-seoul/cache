@@ -6,23 +6,44 @@ type Lifetime = {
   staleTime?: number;
 };
 
+type KeyTransform = (key: string) => string;
 export class MemcachedFetcher {
-  private readonly keyHasher: (key: string) => string;
+  public readonly keyTransform: KeyTransform;
 
-  constructor(private driver: Driver, options: { keyHashing?: boolean } = {}) {
-    const keyHashing = options.keyHashing !== undefined ? options.keyHashing : true;
-    if (keyHashing) {
-      this.keyHasher = (key: string) =>
-        crypto.createHash("md5")
-          .update(key)
-          .digest("hex");
+  constructor(
+    private driver: Driver,
+    options: {
+      keyTransform?:
+        { type: "hashing", algorithm: "md5" } // Currently it only support md5
+        | { type: "prefix", prefix: string }
+        | KeyTransform; // Custom Transform
+    } = {}
+  ) {
+    if (options.keyTransform) {
+      if ("type" in options.keyTransform) {
+        if (options.keyTransform.type === "hashing") {
+          this.keyTransform = (key: string) => {
+            return crypto.createHash("md5")
+              .update(key)
+              .digest("hex");
+          }
+        } else {
+          const { prefix } = options.keyTransform;
+          this.keyTransform = (key: string) => {
+            return `${prefix}${key}`;
+          }
+        }
+      } else {
+        // Custom function
+        this.keyTransform = options.keyTransform;
+      }
     } else {
-      this.keyHasher = (key: string) => key;
+      this.keyTransform = (key: string) => key; // Bypass
     }
   }
 
   public async fetch<Result>(key: string, lifetime: number | Lifetime, fetcher: () => Promise<Result>): Promise<Result> {
-    const hash = this.keyHasher(key);
+    const hash = this.keyTransform(key);
 
     const { cacheTime, staleTime = 0 } = typeof lifetime === "number"
       ? { cacheTime: lifetime }
@@ -53,7 +74,7 @@ export class MemcachedFetcher {
   }
 
   public async del(key: string) {
-    const hash = this.keyHasher(key);
+    const hash = this.keyTransform(key);
     return await this.driver.del(hash);
   }
 
@@ -77,7 +98,7 @@ export class MemcachedFetcher {
 
     const argsToKeyMap = new Map<Argument, string>(
       args.map((arg) => {
-        const hash = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
+        const hash = this.keyTransform(`${namespace}:${argToKey(arg).toString()}`);
         return [arg, hash] as const;
       })
     );
@@ -128,7 +149,7 @@ export class MemcachedFetcher {
 
     await Promise.all(
       args.map(async (arg) => {
-        const hashedKey = this.keyHasher(`${namespace}:${argToKey(arg).toString()}`);
+        const hashedKey = this.keyTransform(`${namespace}:${argToKey(arg).toString()}`);
         await this.driver.del(hashedKey);
       })
     );

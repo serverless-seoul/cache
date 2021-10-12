@@ -20,6 +20,28 @@ describe(MemcachedFetcher.name, () => {
         await driver.flush();
       });
 
+      describe("#constructor - keyTransform", () => {
+        it("should transform with type=hashing", async () => {
+          const subject = new MemcachedFetcher(driver, { keyTransform: { type: "hashing", algorithm: "md5" }}).keyTransform;
+          expect(subject("abc")).to.be.eq("900150983cd24fb0d6963f7d28e17f72");
+        });
+
+        it("should transform with type=prefix", async () => {
+          const subject = new MemcachedFetcher(driver, { keyTransform: { type: "prefix", prefix: "service:" }}).keyTransform;
+          expect(subject("abc")).to.be.eq("service:abc");
+        });
+
+        it("should transform with custom transform", async () => {
+          const subject = new MemcachedFetcher(driver, { keyTransform: (key) => `!!${key}!!`}).keyTransform;
+          expect(subject("abc")).to.be.eq("!!abc!!");
+        });
+
+        it("should bypass transform as default", async () => {
+          const subject = new MemcachedFetcher(driver, {}).keyTransform;
+          expect(subject("abc")).to.be.eq("abc");
+        });
+      });
+
       describe("#fetch", () => {
         it("should cache value", async () => {
           const fn = sinon.fake.resolves({ fake: 3 });
