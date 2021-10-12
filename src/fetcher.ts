@@ -8,7 +8,7 @@ type Lifetime = {
 
 type KeyTransform = (key: string) => string;
 export class MemcachedFetcher {
-  private readonly keyTransform: KeyTransform;
+  public readonly keyTransform: KeyTransform;
 
   constructor(
     private driver: Driver,
@@ -40,7 +40,6 @@ export class MemcachedFetcher {
     } else {
       this.keyTransform = (key: string) => key; // Bypass
     }
-
   }
 
   public async fetch<Result>(key: string, lifetime: number | Lifetime, fetcher: () => Promise<Result>): Promise<Result> {
