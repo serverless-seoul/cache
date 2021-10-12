@@ -58,6 +58,5 @@ describe("#fetchMulti", () => {
 ```
 
 ### Supported Drivers
-
 - Redis
 - Clustered Redis
