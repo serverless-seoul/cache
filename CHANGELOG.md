@@ -1,3 +1,15 @@
+# [9.0.0](https://github.com/serverless-seoul/cache/compare/v8.1.0...v9.0.0) (2021-10-15)
+
+
+### Features
+
+* **local:** add local cache ([7f0f245](https://github.com/serverless-seoul/cache/commit/7f0f24592cce2a3bbf3f6433bd52fb1a0a8c126c))
+
+
+### BREAKING CHANGES
+
+* **local:** change the name of MemcachedFetcher => CacheFetcher
+
 # [8.1.0](https://github.com/serverless-seoul/cache/compare/v8.0.5...v8.1.0) (2021-10-12)
 
 

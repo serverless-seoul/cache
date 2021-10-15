@@ -1,6 +1,6 @@
 {
   "name": "@serverless-seoul/cache",
-  "version": "8.1.0",
+  "version": "9.0.0",
   "private": false,
   "publishConfig": {
     "access": "public"
