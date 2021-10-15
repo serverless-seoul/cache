@@ -1,3 +1,10 @@
+# [9.1.0](https://github.com/serverless-seoul/cache/compare/v9.0.0...v9.1.0) (2021-10-15)
+
+
+### Features
+
+* **fix:** fix key transform bug ([829d1d2](https://github.com/serverless-seoul/cache/commit/829d1d2e78276fb0e3401e337a982d57cef4a87b))
+
 # [9.0.0](https://github.com/serverless-seoul/cache/compare/v8.1.0...v9.0.0) (2021-10-15)
 
 
