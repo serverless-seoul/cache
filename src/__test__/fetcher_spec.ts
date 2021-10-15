@@ -93,12 +93,12 @@ describe(CachedFetcher.name, () => {
             { key: "key:A", value: "A" },
           ]);
           await L2.setMulti([
-            { key: "key:A", value: "A" },
+            { key: "key:A", value: "A-L2" },
             { key: "key:B", value: "B" },
           ]);
           await L3.setMulti([
-            { key: "key:A", value: "A" },
-            { key: "key:B", value: "B" },
+            { key: "key:A", value: "A-L3" },
+            { key: "key:B", value: "B-L3" },
             { key: "key:C", value: "C" },
           ]);
         });
@@ -115,15 +115,24 @@ describe(CachedFetcher.name, () => {
 
           expect(res1).to.deep.eq(["A", "B", "C", "NEW"]);
 
-          // All Caches should be filled upwards
-          for (const cache of [L1,L2,L3]) {
-            expect(await cache.getMulti(["key:A", "key:B", "key:C", "key:D"])).to.be.deep.eq({
-              "key:A": "A",
-              "key:B": "B",
-              "key:C": "C",
-              "key:D": "NEW",
-            });
-          }
+          expect(await L1.getMulti(["key:A", "key:B", "key:C", "key:D"])).to.be.deep.eq({
+            "key:A": "A",
+            "key:B": "B",
+            "key:C": "C",
+            "key:D": "NEW",
+          });
+          expect(await L2.getMulti(["key:A", "key:B", "key:C", "key:D"])).to.be.deep.eq({
+            "key:A": "A-L2",
+            "key:B": "B",
+            "key:C": "C",
+            "key:D": "NEW",
+          });
+          expect(await L3.getMulti(["key:A", "key:B", "key:C", "key:D"])).to.be.deep.eq({
+            "key:A": "A-L3",
+            "key:B": "B-L3",
+            "key:C": "C",
+            "key:D": "NEW",
+          });
         });
       });
 

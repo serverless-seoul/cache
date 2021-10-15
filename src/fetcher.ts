@@ -88,15 +88,16 @@ export class CachedFetcher {
       Object.assign(mergedResult, localResult);
       // Propaginated upwards
       if (driverIndex > 0) {
+        const cashableItems: Array<{ key: string, value: Result, lifetime: number }> = [];
+        for (const key in localResult) {
+          const value = localResult[key];
+          if (value) {
+            cashableItems.push({ key, value, lifetime })
+          }
+        }
+
         await Promise.all(
-          this.drivers
-            .slice(0, driverIndex)
-            .map(async driver => {
-              for (const key in localResult) {
-                const value = localResult[key];
-                await driver.set(key, value, lifetime);
-              }
-            })
+          this.drivers.slice(0, driverIndex).map(driver => driver.setMulti(cashableItems))
         );
       }
       missingKeys = missingKeys.filter((key) => localResult[key] === undefined);
@@ -104,7 +105,6 @@ export class CachedFetcher {
       driverIndex ++;
       driver = this.drivers[driverIndex];
     }
-
     return mergedResult;
   }
 
