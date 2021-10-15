@@ -16,7 +16,7 @@ describe(CachedFetcher.name, () => {
         new LocalStorageDriver(),
         new RedisDriver(process.env.REDIS_URL as string),
       ];
-      const subject: CachedFetcher = new CachedFetcher(drivers);
+      const subject: CachedFetcher = new CachedFetcher(drivers, { keyTransform: { type: "prefix", prefix: "a:" } });
 
       beforeEach(async () => {
         await Promise.all(drivers.map((driver) => driver.flush()));
@@ -38,8 +38,8 @@ describe(CachedFetcher.name, () => {
           expect(v2).to.deep.eq(value);
 
           // both drivers should have data now
-          expect(await drivers[0].get(key)).to.be.eq(value);
-          expect(await drivers[1].get(key)).to.be.eq(value);
+          expect(await drivers[0].get(`a:${key}`)).to.be.eq(value);
+          expect(await drivers[1].get(`a:${key}`)).to.be.eq(value);
         });
       });
 
@@ -48,13 +48,13 @@ describe(CachedFetcher.name, () => {
           const fetcher = async () => 100;
           const key = "random-key";
 
-          await drivers[0].set(key, await fetcher());
+          await drivers[0].set(`a:${key}`, await fetcher());
 
           expect(await subject.fetch(key, 60, fetcher))
             .to.be.deep.eq(100);
 
-          expect(await drivers[0].get(key)).to.be.eq(100, "L1 should have it");
-          expect(await drivers[1].get(key)).to.be.eq(undefined, "L2 still doesn't have it");
+          expect(await drivers[0].get(`a:${key}`)).to.be.eq(100, "L1 should have it");
+          expect(await drivers[1].get(`a:${key}`)).to.be.eq(undefined, "L2 still doesn't have it");
         });
       });
 
@@ -64,14 +64,14 @@ describe(CachedFetcher.name, () => {
           const key = "random-key";
 
           // Fill L2
-          await drivers[1].set(key, await fetcher());
+          await drivers[1].set(`a:${key}`, await fetcher());
 
           expect(await subject.fetch(key, 60, fetcher))
             .to.be.deep.eq(100);
 
           // L1 has to be popluated
-          expect(await drivers[0].get(key)).to.be.eq(100);
-          expect(await drivers[1].get(key)).to.be.eq(100);
+          expect(await drivers[0].get(`a:${key}`)).to.be.eq(100);
+          expect(await drivers[1].get(`a:${key}`)).to.be.eq(100);
         });
       });
     });

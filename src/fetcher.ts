@@ -91,7 +91,7 @@ export class CachedFetcher {
         const cashableItems: Array<{ key: string, value: Result, lifetime: number }> = [];
         for (const key in localResult) {
           const value = localResult[key];
-          if (value) {
+          if (this.isValue<Result>(value)) {
             cashableItems.push({ key, value, lifetime })
           }
         }
@@ -110,7 +110,7 @@ export class CachedFetcher {
 
   public async fetch<Result>(key: string, lifetime: number, fetcher: () => Promise<Result>): Promise<Result> {
     const transformedKey = this.keyTransform(key);
-    const cached = await this.cascadedGet<Result>(key, lifetime);
+    const cached = await this.cascadedGet<Result>(transformedKey, lifetime);
     if (!this.isValue<Result>(cached)) {
       try {
         const fetched = await fetcher();
