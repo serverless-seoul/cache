@@ -76,7 +76,6 @@ describe(CachedFetcher.name, () => {
       });
     });
 
-
     describe("#multiFetch", () => {
       const L1 = new LocalStorageDriver();
       const L2 = new LocalStorageDriver();
@@ -232,6 +231,38 @@ describe(CachedFetcher.name, () => {
           async (args) => args.map((__) => -1),
         );
         expect(res2).to.deep.eq([1, -1, 3, -1]);
+      });
+    });
+
+    describe("#del", () => {
+      const drivers: [Driver, Driver] = [
+        new LocalStorageDriver(),
+        new RedisDriver(process.env.REDIS_URL as string),
+      ];
+      const subject: CachedFetcher = new CachedFetcher(drivers);
+
+      beforeEach(async () => {
+        await Promise.all(drivers.map((driver) => driver.flush()));
+      });
+
+      context("when L1/L2 both has data", () => {
+        it("should delete all cache", async () => {
+          const value = 100;
+          const key = "random-key";
+
+          await subject.fetch(key, 60, async () => value);
+
+          // both drivers should have data now
+          expect(await drivers[0].get(key)).to.be.eq(value);
+          expect(await drivers[1].get(key)).to.be.eq(value);
+
+
+          await subject.del(key);
+
+          // both drivers should have data now
+          expect(await drivers[0].get(key)).to.be.eq(undefined);
+          expect(await drivers[1].get(key)).to.be.eq(undefined);
+        });
       });
     });
   });
