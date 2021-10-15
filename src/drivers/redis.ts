@@ -53,10 +53,6 @@ export class RedisDriver implements Driver {
     }
   }
 
-  public async ttl(key: string): Promise<number> {
-    return await this.client.ttl(key);
-  }
-
   public async getMulti<Result>(keys: string[]) {
     if (keys.length === 0) {
       return {};
@@ -97,6 +93,14 @@ export class RedisDriver implements Driver {
     if (reply !== "OK") {
       throw new Error(`RedisDriver failed to set: '${key} - ${value}'`);
     }
+  }
+
+  public async setMulti<Result>(items: { key: string; value: Result; lifetime?: number }[]): Promise<void> {
+    Promise.all(
+      items.map(
+        (item) => this.set<Result>(item.key, item.value, item.lifetime),
+      ),
+    );
   }
 
   public async del(key: string) {

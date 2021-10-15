@@ -62,10 +62,6 @@ export class RedisClusterDriver implements Driver {
     }
   }
 
-  public async ttl(key: string): Promise<number> {
-    return await this.client.ttl(key);
-  }
-
   // In cluster mode, MGET (multiple get) command requires all keys must be same key slot
   // if client does not handle this, redis will give "CROSSSLOT Keys in request don't hash to the same slot" Error.
   //
@@ -110,6 +106,14 @@ export class RedisClusterDriver implements Driver {
     if (reply !== "OK") {
       throw new Error(`RedisDriver failed to set: '${key} - ${value}'`);
     }
+  }
+
+  public async setMulti<Result>(items: { key: string; value: Result; lifetime?: number }[]): Promise<void> {
+    Promise.all(
+      items.map(
+        (item) => this.set<Result>(item.key, item.value, item.lifetime),
+      ),
+    );
   }
 
   public async del(key: string) {

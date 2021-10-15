@@ -48,7 +48,9 @@
   },
   "dependencies": {
     "@types/ioredis": "^4.26.4",
-    "ioredis": "^4.27.6"
+    "@types/lru-cache": "^5.1.1",
+    "ioredis": "^4.27.6",
+    "lru-cache": "^6.0.0"
   },
   "config": {
     "commitizen": {
