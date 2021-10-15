@@ -9,6 +9,10 @@ import { Driver } from "../drivers/base";
 
 import { CachedFetcher } from "../fetcher";
 
+function sleep(second: number) {
+  return new Promise((resolve) => setTimeout(resolve, second * 1000));
+}
+
 describe(CachedFetcher.name, () => {
   context("With multidriver", () => {
     describe("#fetch", () => {
@@ -72,6 +76,24 @@ describe(CachedFetcher.name, () => {
           // L1 has to be popluated
           expect(await drivers[0].get(`a:${key}`)).to.be.eq(100);
           expect(await drivers[1].get(`a:${key}`)).to.be.eq(100);
+        });
+      });
+
+      context.only("with strictTTL=on", () => {
+        it("should propaginate TTL value", async () => {
+          const fetcher = async () => 100;
+          const key = "random-key";
+          const maxTTL = 10;
+          const L2TTL = 1;
+
+          // Fill L2
+          await drivers[1].set(`a:${key}`, await fetcher(), 1);
+          expect(await subject.fetch(key, maxTTL, fetcher))
+            .to.be.deep.eq(100);
+
+          expect(await drivers[0].get(`a:${key}`)).to.be.eq(100, "L1 should have value initially");
+          await sleep(L2TTL);
+          expect(await drivers[0].get(`a:${key}`)).to.be.eq(undefined, "L1 should expire the value after L2 TTL");
         });
       });
     });

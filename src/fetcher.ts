@@ -5,7 +5,6 @@ type KeyTransform = (key: string) => string;
 
 export class CachedFetcher {
   public readonly keyTransform: KeyTransform;
-
   constructor(
     private drivers: Driver[],
     options: {
@@ -45,7 +44,8 @@ export class CachedFetcher {
    */
   private async cascadedGet<Result>(
     transformedKey: string,
-    lifetime: number
+    lifetime: number,
+    propagateTTL: boolean = false
   ) {
     let value: Result | undefined = undefined;
     for (let i = 0;i<this.drivers.length; i++) {
@@ -55,9 +55,12 @@ export class CachedFetcher {
       if (value !== undefined) {
         // Fill missing top drivers
         if (i > 0) {
-          await Promise.all(
-            this.drivers.slice(0, i).map(driver => driver.set(transformedKey, value, lifetime))
-          );
+          const remainingLifetime = propagateTTL ? await driver.ttl(transformedKey) : lifetime;
+          if (remainingLifetime !== null) {
+            await Promise.all(
+              this.drivers.slice(0, i).map(driver => driver.set(transformedKey, value, remainingLifetime))
+            );
+          }
         }
         // And returns
         return value;
@@ -108,9 +111,21 @@ export class CachedFetcher {
     return mergedResult;
   }
 
-  public async fetch<Result>(key: string, lifetime: number, fetcher: () => Promise<Result>): Promise<Result> {
+  public async fetch<Result>(
+    key: string,
+    lifetimeOption: number | {
+      lifetime: number,
+      strict: true
+    },
+    fetcher: () => Promise<Result>
+  ): Promise<Result> {
+    const { lifetime, strict } =
+      typeof lifetimeOption === "number" ?
+        { lifetime: lifetimeOption, strict: false }
+        : lifetimeOption;
+
     const transformedKey = this.keyTransform(key);
-    const cached = await this.cascadedGet<Result>(transformedKey, lifetime);
+    const cached = await this.cascadedGet<Result>(transformedKey, lifetime, strict);
     if (!this.isValue<Result>(cached)) {
       try {
         const fetched = await fetcher();

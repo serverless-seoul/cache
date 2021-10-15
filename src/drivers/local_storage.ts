@@ -26,6 +26,10 @@ export class LocalStorageDriver implements Driver {
     );
   }
 
+  public async ttl(key: string): Promise<number> {
+    throw new Error("LocalStorageDriver doesn't support #ttl");
+  }
+
   public async del(key: string): Promise<boolean> {
     this.store.del(key);
     return true;
