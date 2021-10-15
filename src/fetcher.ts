@@ -1,17 +1,13 @@
 import * as crypto from "crypto";
 import { Driver } from "./drivers/base";
 
-type Lifetime = {
-  cacheTime: number;
-  staleTime?: number;
-};
-
 type KeyTransform = (key: string) => string;
-export class MemcachedFetcher {
+
+export class CachedFetcher {
   public readonly keyTransform: KeyTransform;
 
   constructor(
-    private driver: Driver,
+    private drivers: Driver[],
     options: {
       keyTransform?:
         { type: "hashing", algorithm: "md5" } // Currently it only support md5
@@ -42,40 +38,97 @@ export class MemcachedFetcher {
     }
   }
 
-  public async fetch<Result>(key: string, lifetime: number | Lifetime, fetcher: () => Promise<Result>): Promise<Result> {
-    const hash = this.keyTransform(key);
+  /**
+   *
+   * @param transformedKey
+   * @returns
+   */
+  private async cascadedGet<Result>(
+    transformedKey: string,
+    lifetime: number
+  ) {
+    let value: Result | undefined = undefined;
+    for (let i = 0;i<this.drivers.length; i++) {
+      const driver = this.drivers[i];
 
-    const { cacheTime, staleTime = 0 } = typeof lifetime === "number"
-      ? { cacheTime: lifetime }
-      : lifetime;
+      value = await driver.get(transformedKey);
+      if (value !== undefined) {
+        // Fill missing top drivers
+        if (i > 0) {
+          await Promise.all(
+            this.drivers.slice(0, i).map(driver => driver.set(transformedKey, value, lifetime))
+          );
+        }
+        // And returns
+        return value;
+      }
+    }
+    return undefined;
+  }
 
-    const [cached, ttl] = await Promise.all([
-      this.driver.get<Result>(hash),
-      staleTime ? this.driver.ttl(hash) : Promise.resolve(0),
-    ]);
+  /**
+   * @param transformedKey
+   * @returns
+   */
+  private async cascadedMultiGet<Result>(
+    transformedKeys: string[],
+    lifetime: number
+  ) {
+    const mergedResult: { [key: string]: Result | undefined } = {};
 
-    if (!this.isValue(cached) || this.isStale(ttl, cacheTime, staleTime)) {
+    let missingKeys = transformedKeys;
+    let driverIndex = 0;
+    let driver = this.drivers[driverIndex];
+
+    // Every driver returns value, and if the next driver has value, it back fill drivers in front.
+    // this loops until driver ran out or keys are all have values
+    while (missingKeys.length > 0 && driver) {
+      const localResult = await driver.getMulti<Result>(missingKeys);
+      // Add to global result,
+      Object.assign(mergedResult, localResult);
+      // Propaginated upwards
+      if (driverIndex > 0) {
+        const cashableItems: Array<{ key: string, value: Result, lifetime: number }> = [];
+        for (const key in localResult) {
+          const value = localResult[key];
+          if (value) {
+            cashableItems.push({ key, value, lifetime })
+          }
+        }
+
+        await Promise.all(
+          this.drivers.slice(0, driverIndex).map(driver => driver.setMulti(cashableItems))
+        );
+      }
+      missingKeys = missingKeys.filter((key) => localResult[key] === undefined);
+
+      driverIndex ++;
+      driver = this.drivers[driverIndex];
+    }
+    return mergedResult;
+  }
+
+  public async fetch<Result>(key: string, lifetime: number, fetcher: () => Promise<Result>): Promise<Result> {
+    const transformedKey = this.keyTransform(key);
+    const cached = await this.cascadedGet<Result>(key, lifetime);
+    if (!this.isValue<Result>(cached)) {
       try {
         const fetched = await fetcher();
-        await this.driver.set(hash, fetched, cacheTime);
+        await Promise.all(this.drivers.map(driver => driver.set(transformedKey, fetched, lifetime)));
         return fetched;
       } catch (e) {
         // If cached value is available, swallow thrown error and reuse cache
-        if (this.isValue(cached)) {
+        if (this.isValue<Result>(cached)) {
           return cached;
         }
-
-        // Otherwise throw error
         throw e;
       }
     }
-
     return cached;
   }
 
   public async del(key: string) {
-    const hash = this.keyTransform(key);
-    return await this.driver.del(hash);
+    await Promise.all(this.drivers.map(driver => driver.del(this.keyTransform(key))));
   }
 
   public async multiFetch<Argument, Result>(
@@ -96,15 +149,15 @@ export class MemcachedFetcher {
       }
     })();
 
-    const argsToKeyMap = new Map<Argument, string>(
+    const argsToTransformedKeyMap = new Map<Argument, string>(
       args.map((arg) => {
-        const hash = this.keyTransform(`${namespace}:${argToKey(arg).toString()}`);
-        return [arg, hash] as const;
+        const transformedKey = this.keyTransform(`${namespace}:${argToKey(arg).toString()}`);
+        return [arg, transformedKey] as const;
       })
     );
 
-    const cached = await this.driver.getMulti<Result>(Array.from(argsToKeyMap.values()));
-    const missingArgs = args.filter((arg) => !this.isValue(cached[argsToKeyMap.get(arg)!]));
+    const cached = await this.cascadedMultiGet<Result>(Array.from(argsToTransformedKeyMap.values()), lifetime);
+    const missingArgs = args.filter((arg) => !this.isValue(cached[argsToTransformedKeyMap.get(arg)!]));
 
     const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
 
@@ -114,19 +167,17 @@ export class MemcachedFetcher {
     const fetched = new Map<Argument, Result>(
       missingArgs.map((arg, index) => [arg, fetchedArray[index]] as [Argument, Result]));
 
-    await Promise.all(
-      Array.from(fetched).map(async ([arg, result]) => {
-        if (this.isValue(result)) {
-          await this.driver.set(argsToKeyMap.get(arg)!, result, lifetime);
-        } else {
-          // if fetcher returns undefined, that means user intentionally not want to cache this value
-        }
-      }),
-    );
+    const cachableItems: Array<{ key: string, value: Result, lifetime: number }> = [];
+    Array.from(fetched).forEach(async ([arg, result]) => {
+      if (this.isValue(result)) {
+        cachableItems.push({ key: argsToTransformedKeyMap.get(arg)!, value: result, lifetime });
+      }
+    })
+    await Promise.all(this.drivers.map(driver => driver.setMulti(cachableItems)));
 
     return args.map((arg) => {
-      const hash = argsToKeyMap.get(arg)!;
-      const value = cached[hash];
+      const transformedKey = argsToTransformedKeyMap.get(arg)!;
+      const value = cached[transformedKey];
       if (this.isValue(value)) {
         return value;
       } else {
@@ -149,14 +200,10 @@ export class MemcachedFetcher {
 
     await Promise.all(
       args.map(async (arg) => {
-        const hashedKey = this.keyTransform(`${namespace}:${argToKey(arg).toString()}`);
-        await this.driver.del(hashedKey);
+        const key = this.keyTransform(`${namespace}:${argToKey(arg).toString()}`);
+        await Promise.all(this.drivers.map(driver => driver.del(key)));
       })
     );
-  }
-
-  private isStale(ttl: number, cacheTime: number, staleTime?: number): boolean {
-    return !!staleTime && ttl > 0 && (cacheTime - staleTime) > ttl;
   }
 
   private isValue<T>(value: T | undefined | null): value is T {

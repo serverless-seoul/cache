@@ -9,7 +9,7 @@ import {
 import {
   RedisDriver as DevelopSingleDriver,
   RedisClusterDriver as DevelopClusterDriver,
-  MemcachedFetcher as DevelopFetcher,
+  CachedFetcher as DevelopFetcher,
 } from "../src";
 import { isMainThread } from "worker_threads";
 
