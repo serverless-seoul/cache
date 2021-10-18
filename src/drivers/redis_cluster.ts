@@ -91,6 +91,20 @@ export class RedisClusterDriver implements Driver {
     }, {} as { [key: string]: Result | undefined });
   }
 
+  public async ttl(key: string): Promise<number> {
+    const ttl = await this.client.ttl(key);
+    // https://redis.io/commands/TTL
+    if (ttl === -2) {
+      // The command returns -2 if the key does not exist.
+      return 0;
+    } else if (ttl === -1) {
+      // The command returns -1 if the key exists but has no associated expire.
+      return -1;
+    } else {
+      return ttl;
+    }
+  }
+
   public async set<Result>(key: string, value: Result, lifetime?: number) {
     const serialized = JSON.stringify(value);
 

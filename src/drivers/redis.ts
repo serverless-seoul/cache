@@ -96,11 +96,25 @@ export class RedisDriver implements Driver {
   }
 
   public async setMulti<Result>(items: { key: string; value: Result; lifetime?: number }[]): Promise<void> {
-    Promise.all(
+    await Promise.all(
       items.map(
         (item) => this.set<Result>(item.key, item.value, item.lifetime),
       ),
     );
+  }
+
+  public async ttl(key: string): Promise<number | undefined | null> {
+    const ttl = await this.client.ttl(key);
+    // https://redis.io/commands/TTL
+    if (ttl === -2) {
+      // The command returns -2 if the key does not exist.
+      return null;
+    } else if (ttl === -1) {
+      // The command returns -1 if the key exists but has no associated expire.
+      return undefined;
+    } else {
+      return ttl;
+    }
   }
 
   public async del(key: string) {

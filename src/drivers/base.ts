@@ -27,6 +27,14 @@ export interface Driver {
   del(key: string): Promise<boolean>;
 
   /**
+   * remaing lifetime of given key (in second)
+   * positive number means => lifetime
+   * undefined means => key exists but doesn't have expiration
+   * null means => key doesn't exists
+   */
+   ttl(key: string): Promise<number | undefined | null>;
+
+  /**
    * Flushes the cache server
    * @return Promise<void>
    */
