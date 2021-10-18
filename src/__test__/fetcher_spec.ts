@@ -79,16 +79,16 @@ describe(CachedFetcher.name, () => {
         });
       });
 
-      context.only("with strictTTL=on", () => {
+      context("with strictTTL=on", () => {
         it("should propaginate TTL value", async () => {
           const fetcher = async () => 100;
           const key = "random-key";
-          const maxTTL = 10;
+          const maxTTL = 2;
           const L2TTL = 1;
 
           // Fill L2
-          await drivers[1].set(`a:${key}`, await fetcher(), 1);
-          expect(await subject.fetch(key, maxTTL, fetcher))
+          await drivers[1].set(`a:${key}`, await fetcher(), L2TTL);
+          expect(await subject.fetch(key, { lifetime: maxTTL, strict: true }, fetcher))
             .to.be.deep.eq(100);
 
           expect(await drivers[0].get(`a:${key}`)).to.be.eq(100, "L1 should have value initially");
@@ -96,17 +96,38 @@ describe(CachedFetcher.name, () => {
           expect(await drivers[0].get(`a:${key}`)).to.be.eq(undefined, "L1 should expire the value after L2 TTL");
         });
       });
+
+      context("with strictTTL=off", () => {
+        it("should not propaginate TTL value", async () => {
+          const fetcher = async () => 100;
+          const key = "random-key";
+          const maxTTL = 2;
+          const L2TTL = 1;
+
+          // Fill L2
+          await drivers[1].set(`a:${key}`, await fetcher(), L2TTL);
+          expect(await subject.fetch(key, { lifetime: maxTTL, strict: false }, fetcher))
+            .to.be.deep.eq(100);
+
+          expect(await drivers[0].get(`a:${key}`)).to.be.eq(100, "L1 should have value initially");
+          await sleep(L2TTL);
+          expect(await drivers[0].get(`a:${key}`)).to.be.eq(100, "L1 should not expire the value after L2 TTL");
+          await sleep(maxTTL);
+          expect(await drivers[0].get(`a:${key}`)).to.be.eq(undefined, "L1 should expire the value after max TTL");
+        });
+      });
     });
 
     describe("#multiFetch", () => {
       const L1 = new LocalStorageDriver();
-      const L2 = new LocalStorageDriver();
+      const L2 = new RedisDriver(process.env.REDIS_URL as string);
       const L3 = new LocalStorageDriver();
       const drivers = [L1, L2, L3] as const;
-      const subject: CachedFetcher = new CachedFetcher([...drivers]);
+      let subject: CachedFetcher;
 
       beforeEach(async () => {
         await Promise.all(drivers.map((driver) => driver.flush()));
+        subject = new CachedFetcher([...drivers]);
       });
 
       context("when cache has cascaded discrepency", () => {
@@ -154,6 +175,54 @@ describe(CachedFetcher.name, () => {
             "key:B": "B-L3",
             "key:C": "C",
             "key:D": "NEW",
+          });
+        });
+
+        context("with TTL propagination", () => {
+          beforeEach(() => {
+            subject = new CachedFetcher([L1, L2]);
+          });
+
+          context("with strictTTL=on", () => {
+            it("should propaginate TTL value", async () => {
+              const maxTTL = 2;
+              const L2TTL = 1;
+
+              // Fill L2
+              await L2.set("v1:1", "old-1", L2TTL);
+              await subject.multiFetch(
+                [1, 2],
+                "v1",
+                { lifetime: maxTTL, strict: true },
+                async (args) => args.map((arg) => `new-${arg}`),
+              );
+
+              expect(await L1.get("v1:1")).to.be.eq("old-1", "L1 should have value initially");
+              await sleep(L2TTL);
+              expect(await L1.get("v1:1")).to.be.eq(undefined, "L1 should expire the value after L2 TTL");
+            });
+          });
+
+          context("with strictTTL=off", () => {
+            it("should propaginate TTL value", async () => {
+              const maxTTL = 2;
+              const L2TTL = 1;
+
+              // Fill L2
+              await L2.set("v1:1", "old-1", L2TTL);
+              await subject.multiFetch(
+                [1, 2],
+                "v1",
+                { lifetime: maxTTL, strict: false },
+                async (args) => args.map((arg) => `new-${arg}`),
+              );
+
+              expect(await L1.get("v1:1")).to.be.eq("old-1", "L1 should have value initially");
+              await sleep(L2TTL);
+              expect(await L1.get("v1:1")).to.be.eq("old-1", "L1 should not expire value after L2 TTL");
+              await sleep(maxTTL);
+              expect(await L1.get("v1:1")).to.be.eq(undefined, "L1 should expire maxTTL");
+            });
           });
         });
       });

@@ -75,7 +75,8 @@ export class CachedFetcher {
    */
   private async cascadedMultiGet<Result>(
     transformedKeys: string[],
-    lifetime: number
+    lifetime: number,
+    propagateTTL: boolean = false
   ) {
     const mergedResult: { [key: string]: Result | undefined } = {};
 
@@ -89,13 +90,15 @@ export class CachedFetcher {
       const localResult = await driver.getMulti<Result>(missingKeys);
       // Add to global result,
       Object.assign(mergedResult, localResult);
+
       // Propaginated upwards
       if (driverIndex > 0) {
         const cashableItems: Array<{ key: string, value: Result, lifetime: number }> = [];
         for (const key in localResult) {
           const value = localResult[key];
           if (this.isValue<Result>(value)) {
-            cashableItems.push({ key, value, lifetime })
+            const remainingLifetime = propagateTTL ? (await driver.ttl(key) ?? lifetime) : lifetime;
+            cashableItems.push({ key, value, lifetime: remainingLifetime })
           }
         }
 
@@ -115,7 +118,7 @@ export class CachedFetcher {
     key: string,
     lifetimeOption: number | {
       lifetime: number,
-      strict: true
+      strict: boolean,
     },
     fetcher: () => Promise<Result>
   ): Promise<Result> {
@@ -149,12 +152,20 @@ export class CachedFetcher {
   public async multiFetch<Argument, Result>(
     args: Argument[],
     key: string | [string, (args: Argument) => { toString(): string }],
-    lifetime: number,
+    lifetimeOption: number | {
+      lifetime: number,
+      strict: boolean,
+    },
     fetcher: (args: Argument[]) => Promise<Result[]>
   ): Promise<Result[]> {
     if (args.length === 0) {
       return [];
     }
+
+    const { lifetime, strict } =
+      typeof lifetimeOption === "number" ?
+        { lifetime: lifetimeOption, strict: false }
+        : lifetimeOption;
 
     const { namespace, argToKey } = (() => {
       if (typeof key === "string") {
@@ -171,7 +182,7 @@ export class CachedFetcher {
       })
     );
 
-    const cached = await this.cascadedMultiGet<Result>(Array.from(argsToTransformedKeyMap.values()), lifetime);
+    const cached = await this.cascadedMultiGet<Result>(Array.from(argsToTransformedKeyMap.values()), lifetime, strict);
     const missingArgs = args.filter((arg) => !this.isValue(cached[argsToTransformedKeyMap.get(arg)!]));
 
     const fetchedArray = missingArgs.length > 0 ? await fetcher(missingArgs) : [];
