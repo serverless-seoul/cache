@@ -1,3 +1,10 @@
+# [9.2.0](https://github.com/serverless-seoul/cache/compare/v9.1.0...v9.2.0) (2021-10-18)
+
+
+### Features
+
+* **strictTTL:** add strictTTL feature ([2a83c47](https://github.com/serverless-seoul/cache/commit/2a83c47a9a8ab9799126e9a6d99cc717ae5b5ded))
+
 # [9.1.0](https://github.com/serverless-seoul/cache/compare/v9.0.0...v9.1.0) (2021-10-15)
 
 
