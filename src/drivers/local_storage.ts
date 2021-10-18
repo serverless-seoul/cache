@@ -19,11 +19,10 @@ export class LocalStorageDriver implements Driver {
   }
 
   public async setMulti<Result>(items: { key: string; value: Result; lifetime?: number }[]): Promise<void> {
-    Promise.all(
-      items.map(
-        (item) => this.set<Result>(item.key, item.value, item.lifetime),
-      ),
-    );
+    // since this.set is not really async anyway...
+    for (const item of items) {
+      await this.set<Result>(item.key, item.value, item.lifetime)
+    }
   }
 
   public async ttl(key: string): Promise<number> {

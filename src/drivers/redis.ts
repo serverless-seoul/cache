@@ -96,7 +96,7 @@ export class RedisDriver implements Driver {
   }
 
   public async setMulti<Result>(items: { key: string; value: Result; lifetime?: number }[]): Promise<void> {
-    Promise.all(
+    await Promise.all(
       items.map(
         (item) => this.set<Result>(item.key, item.value, item.lifetime),
       ),
