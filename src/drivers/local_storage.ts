@@ -21,7 +21,7 @@ export class LocalStorageDriver implements Driver {
   public async setMulti<Result>(items: { key: string; value: Result; lifetime?: number }[]): Promise<void> {
     // since this.set is not really async anyway...
     for (const item of items) {
-      await this.set<Result>(item.key, item.value, item.lifetime)
+      await this.set<Result>(item.key, item.value, item.lifetime);
     }
   }
 
