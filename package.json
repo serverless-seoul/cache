@@ -35,7 +35,7 @@
     "@catchfashion/semantic-release-config": "1.1.0",
     "@catchfashion/tslint-preset": "1.1.2",
     "@types/chai": "4.3.1",
-    "@types/mocha": "9.1.0",
+    "@types/mocha": "9.1.1",
     "@types/node": "12.20.48",
     "@types/sinon": "10.0.11",
     "chai": "4.3.6",
