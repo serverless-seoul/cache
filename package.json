@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@types/ioredis": "^4.26.4",
-    "@types/lru-cache": "^5.1.1",
+    "@types/lru-cache": "^7.0.0",
     "ioredis": "^4.27.6",
     "lru-cache": "^6.0.0"
   },
