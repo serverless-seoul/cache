@@ -47,9 +47,9 @@
     "typescript": "5.3.3"
   },
   "dependencies": {
-    "@types/ioredis": "^4.26.4",
+    "@types/ioredis": "^5.0.0",
     "@types/lru-cache": "^5.1.1",
-    "ioredis": "^4.27.6",
+    "ioredis": "^5.0.0",
     "lru-cache": "^6.0.0"
   },
   "config": {
