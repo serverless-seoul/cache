@@ -39,7 +39,7 @@
     "@types/node": "12.20.55",
     "@types/sinon": "10.0.20",
     "chai": "4.3.7",
-    "husky": "8.0.3",
+    "husky": "9.1.6",
     "mocha": "10.2.0",
     "semantic-release": "21.0.7",
     "sinon": "15.2.0",
